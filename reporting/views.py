@@ -20,7 +20,9 @@ class CommunityReportListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         data = serializer.validated_data
-        serializer.instance = submit_report(self.request.user, data["report_type"], data["content"])
+        serializer.instance = submit_report(
+            self.request.user, data["report_type"], data["content"], data.get("details", "")
+        )
 
 
 class BaseModerationView(APIView):

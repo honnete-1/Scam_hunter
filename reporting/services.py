@@ -14,12 +14,13 @@ class ModerationError(Exception):
     pass
 
 
-def submit_report(user, report_type, content):
+def submit_report(user, report_type, content, details=""):
     # New reports always start as PENDING. They do nothing until a moderator approves them.
     return CommunityReport.objects.create(
         submitted_by=user,
         report_type=report_type,
         content=content.strip(),
+        details=details.strip(),
         status=ReportStatus.PENDING,
     )
 

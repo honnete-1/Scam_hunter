@@ -24,6 +24,8 @@ class CommunityReport(models.Model):
     )
     report_type = models.CharField(max_length=10, choices=ReportType.choices)
     content = models.TextField()
+    # Optional context from the reporter, e.g. where they received it.
+    details = models.TextField(blank=True)
     status = models.CharField(
         max_length=10, choices=ReportStatus.choices, default=ReportStatus.PENDING
     )

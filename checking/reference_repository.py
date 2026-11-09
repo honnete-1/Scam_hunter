@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from django.conf import settings
 from django.db import DatabaseError
 from django.db.models import Q
 
@@ -36,11 +37,18 @@ def approved_only(queryset):
     )
 
 
+def raise_if_outage_simulated():
+    # Dev-only switch so the "check could not be completed" screen can be shown for real.
+    if settings.SIMULATE_REFERENCE_OUTAGE:
+        raise DatabaseError("Simulated reference outage.")
+
+
 class ReferenceRepository:
     def find_url_match(self, url):
         url = normalize_url(url)
         domain = extract_domain(url)
         try:
+            raise_if_outage_simulated()
             # A record matches either the exact URL or the same domain.
             record = approved_only(URLReferenceRecord.objects).filter(
                 Q(url=url) | Q(domain=domain)
@@ -53,6 +61,7 @@ class ReferenceRepository:
         # Normalize the number first so different formats can still match.
         phone_number = normalize_phone_number(phone_number)
         try:
+            raise_if_outage_simulated()
             record = approved_only(PhoneReferenceRecord.objects).filter(
                 phone_number=phone_number
             ).first()

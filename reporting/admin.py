@@ -23,6 +23,7 @@ class CommunityReportAdmin(admin.ModelAdmin):
     # Status is read-only so moderators can't skip the moderation service
     # (which is the only place that creates reference records).
     readonly_fields = ("status", "created_at", "updated_at")
+    fields = ("submitted_by", "report_type", "content", "details", "status", "created_at", "updated_at")
     inlines = [ModerationReviewInline]
     actions = ["approve_selected", "reject_selected"]
 

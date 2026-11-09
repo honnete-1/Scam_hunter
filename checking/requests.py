@@ -7,6 +7,9 @@ from urllib.parse import urlsplit
 
 MAX_MESSAGE_LENGTH = 5000
 
+INVALID_URL_ERROR = "Enter a valid URL, for example https://example.com."
+INVALID_PHONE_ERROR = "Enter a valid phone number, for example +250 788 123 456."
+
 # Normal hostnames like "example.com" or "mail.bank.co.rw" (after IDNA encoding).
 HOSTNAME_PATTERN = re.compile(r"^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]([a-z0-9-]*[a-z0-9])?$")
 
@@ -41,10 +44,10 @@ def normalize_url(url):
         port = parts.port
     except ValueError:
         # urlsplit raises ValueError for things like a non-numeric port.
-        raise CheckValidationError("This does not look like a valid URL.")
+        raise CheckValidationError(INVALID_URL_ERROR)
 
     if not host:
-        raise CheckValidationError("This does not look like a valid URL.")
+        raise CheckValidationError(INVALID_URL_ERROR)
 
     host = _normalize_host(host)
 
@@ -76,10 +79,10 @@ def _normalize_host(host):
     try:
         host = host.encode("idna").decode("ascii").lower()
     except UnicodeError:
-        raise CheckValidationError("This does not look like a valid URL.")
+        raise CheckValidationError(INVALID_URL_ERROR)
 
     if not HOSTNAME_PATTERN.match(host):
-        raise CheckValidationError("This does not look like a valid URL.")
+        raise CheckValidationError(INVALID_URL_ERROR)
     return host
 
 
@@ -105,15 +108,14 @@ def normalize_phone_number(phone_number):
         cleaned = "+" + cleaned[2:]
 
     if not PHONE_PATTERN.match(cleaned):
-        raise CheckValidationError(
-            "Please enter a valid phone number (7 to 15 digits, optionally starting with +)."
-        )
+        raise CheckValidationError(INVALID_PHONE_ERROR)
     return cleaned
 
 
 # Base class for anything a user can check.
 class CheckRequest:
     check_type = None
+    empty_error = "Please enter something to check."
 
     def __init__(self, input_text):
         self.input = input_text
@@ -122,7 +124,7 @@ class CheckRequest:
     def validate(self):
         # Shared rule for every check: there must be some actual text.
         if not isinstance(self.input, str) or not self.input.strip():
-            raise CheckValidationError("Please enter something to check.")
+            raise CheckValidationError(self.empty_error)
 
     def normalize(self):
         self.normalized = self.input.strip()
@@ -131,6 +133,7 @@ class CheckRequest:
 
 class MessageCheck(CheckRequest):
     check_type = "MESSAGE"
+    empty_error = "Please enter a message before checking."
 
     def validate(self):
         super().validate()
@@ -147,6 +150,7 @@ class MessageCheck(CheckRequest):
 
 class URLCheck(CheckRequest):
     check_type = "URL"
+    empty_error = "Please enter a URL before checking."
 
     def __init__(self, input_text):
         super().__init__(input_text)
@@ -164,6 +168,7 @@ class URLCheck(CheckRequest):
 
 class PhoneCheck(CheckRequest):
     check_type = "PHONE"
+    empty_error = "Please enter a phone number before checking."
 
     def validate(self):
         super().validate()

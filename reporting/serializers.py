@@ -16,7 +16,7 @@ CHECK_CLASS_FOR_REPORT_TYPE = {
 class CommunityReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunityReport
-        fields = ["id", "report_type", "content", "status", "created_at", "updated_at"]
+        fields = ["id", "report_type", "content", "details", "status", "created_at", "updated_at"]
         read_only_fields = ["status", "created_at", "updated_at"]
 
     def validate(self, data):

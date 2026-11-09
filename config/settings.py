@@ -19,6 +19,9 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+# Set to True only for demos/testing: every reference lookup then fails with CHECK_UNAVAILABLE.
+SIMULATE_REFERENCE_OUTAGE = os.environ.get('SIMULATE_REFERENCE_OUTAGE', 'False') == 'True'
+
 
 # Application definition
 
