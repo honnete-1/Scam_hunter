@@ -24,6 +24,16 @@ class ReferenceRepositoryTests(TestCase):
         result = self.repository.find_url_match("https://www.fake-bank.example/other-page")
         self.assertEqual(result.status, LookupStatus.MATCH)
 
+    def test_rwanda_number_matches_in_every_common_format(self):
+        # The mobile app and website may send the number in any of these forms.
+        record = PhoneReferenceRecord.objects.create(phone_number="0788 123 456")
+        self.assertEqual(record.phone_number, "+250788123456")
+        for raw in ["0788123456", "+250 788 123 456", "+250788123456", "250788123456"]:
+            with self.subTest(phone=raw):
+                result = self.repository.find_phone_match(raw)
+                self.assertEqual(result.status, LookupStatus.MATCH)
+                self.assertEqual(result.match, record)
+
     def test_approved_phone_match_found(self):
         record = PhoneReferenceRecord.objects.create(phone_number="+250 788 000 111")
         result = self.repository.find_phone_match("00250-788-000-111")

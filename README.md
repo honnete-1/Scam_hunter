@@ -95,6 +95,45 @@ Classification rules (`checking/analysis_result.py`):
 
 Checked content is never saved to the database.
 
+## Message detector and its limits
+
+The message detector (`MESSAGE_RULES` in `checking/rule_engine.py`) is rule-based, not machine
+learning. Each of the six categories looks for a **behaviour**: an action combined with what it is
+about, such as "send/reply with" + "OTP", "pay/transfer" + "RWF/MoMo", or "this is/calling from" +
+"MTN Customer Care". A single word like "password", "MTN" or "congratulations" is not enough.
+Advice such as "never share your PIN" or "do not send money" is skipped on purpose.
+
+Only the first match in each category counts, so repeating urgent words cannot push a message to
+High Concern by itself.
+
+Things to keep in mind:
+
+- It only detects the scam-like behaviours it has rules for. New or unusual wording can be missed.
+- Results are advice, not proof. A flagged message may be genuine, and an unflagged one may still be a scam.
+- `NO_KNOWN_WARNING_SIGNS` never means the content is guaranteed to be safe.
+- Rules can be added over time. Re-run the evaluation after every change:
+
+```bash
+python manage.py evaluate_detector        # add -v 2 to see every result
+```
+
+The evaluation sets are in `checking/evaluation/dataset.py`:
+
+| Set | Size | How it was used |
+|-----|------|-----------------|
+| main | 30 suspicious + 30 legitimate | Used while refining the rules |
+| holdout | 15 + 15 | Written later; its misses were then used to fix gaps, so it is no longer unseen |
+| challenge | 20 + 20 | Written after the final rule changes and run once without tuning |
+
+The challenge set is the most honest measure of new wording: 60.0% of suspicious messages were
+flagged and 5.0% of legitimate ones (Stage 2.5 final pass). Its misses mostly use `-ing` verbs
+("by entering your password"), dropped subjects ("need 50k urgently") or synonyms the rules do not
+know ("picked as winner", "reverse it to me"). `checking/tests/test_evaluation.py` fails if the
+main or holdout results drop below 80% detection or rise above 20% false positives.
+
+Rwanda mobile numbers are stored as `+2507XXXXXXXX`, so `0788 123 456`, `250788123456` and
+`+250 788 123 456` all match the same phone reference record. Other countries' numbers are not changed.
+
 ## Community reports
 
 ```

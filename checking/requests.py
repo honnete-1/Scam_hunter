@@ -16,6 +16,10 @@ HOSTNAME_PATTERN = re.compile(r"^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]([a-z0-9
 # E.164 allows at most 15 digits. Fewer than 7 digits is too short to be a real number.
 PHONE_PATTERN = re.compile(r"^\+?\d{7,15}$")
 
+# 0788123456 (local) and 250788123456 (country code without +).
+RWANDA_LOCAL_MOBILE = re.compile(r"^07[2389]\d{7}$")
+RWANDA_MOBILE_WITHOUT_PLUS = re.compile(r"^2507[2389]\d{7}$")
+
 
 # Raised when input cannot be checked. It must never become a normal result.
 class CheckValidationError(ValueError):
@@ -106,6 +110,13 @@ def normalize_phone_number(phone_number):
     # "00" is the international dialling prefix, the same as "+".
     if cleaned.startswith("00"):
         cleaned = "+" + cleaned[2:]
+
+    # Rwanda mobile numbers (072, 073, 078, 079) are stored as +2507XXXXXXXX so every
+    # common way of writing the same number matches. Other numbers are left as they are.
+    if RWANDA_LOCAL_MOBILE.match(cleaned):
+        cleaned = "+250" + cleaned[1:]
+    elif RWANDA_MOBILE_WITHOUT_PLUS.match(cleaned):
+        cleaned = "+" + cleaned
 
     if not PHONE_PATTERN.match(cleaned):
         raise CheckValidationError(INVALID_PHONE_ERROR)

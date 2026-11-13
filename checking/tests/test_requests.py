@@ -90,5 +90,25 @@ class PhoneCheckValidationTests(SimpleTestCase):
             with self.subTest(phone=raw):
                 self.assertEqual(normalize_phone_number(raw), expected)
 
-    def test_local_number_kept_as_digits(self):
-        self.assertEqual(normalize_phone_number("0788 123 456"), "0788123456")
+    def test_rwanda_formats_normalize_to_one_canonical_value(self):
+        for raw in ["0788 123 456", "0788123456", "+250 788 123 456", "+250788123456", "250788123456",
+                    "0788-123-456", "00250 788 123 456"]:
+            with self.subTest(phone=raw):
+                self.assertEqual(normalize_phone_number(raw), "+250788123456")
+
+    def test_all_rwanda_mobile_prefixes(self):
+        for local, canonical in [("0722123456", "+250722123456"), ("0731234567", "+250731234567"),
+                                 ("0781234567", "+250781234567"), ("0791234567", "+250791234567")]:
+            with self.subTest(phone=local):
+                self.assertEqual(normalize_phone_number(local), canonical)
+
+    def test_other_numbers_are_not_turned_into_rwanda_numbers(self):
+        for raw, expected in [
+            ("+254712345678", "+254712345678"),  # Kenya stays Kenya
+            ("+14155552671", "+14155552671"),
+            ("0712345678", "0712345678"),  # 071 is not a Rwanda mobile prefix, so it is left alone
+            ("250712345678", "250712345678"),
+            ("2507881234567", "2507881234567"),  # one digit too many to be a Rwanda mobile number
+        ]:
+            with self.subTest(phone=raw):
+                self.assertEqual(normalize_phone_number(raw), expected)
