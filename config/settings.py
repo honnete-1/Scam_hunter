@@ -17,7 +17,14 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-pso8^z(e1_6dy2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# Extra hosts (e.g. your computer's LAN IP for a phone running Expo Go) can be added as a
+# comma-separated list. 10.0.2.2 is how the Android emulator reaches this computer.
+ALLOWED_HOSTS = ['localhost', '127.0.0.1'] + (['10.0.2.2'] if DEBUG else [])
+ALLOWED_HOSTS += [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if host.strip()]
+
+# Only needed when the mobile app runs in a web browser (Expo web). Native apps don't use CORS.
+# Example: DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:8081
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get('DJANGO_CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]
 
 # Set to True only for demos/testing: every reference lookup then fails with CHECK_UNAVAILABLE.
 SIMULATE_REFERENCE_OUTAGE = os.environ.get('SIMULATE_REFERENCE_OUTAGE', 'False') == 'True'
@@ -37,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
+    'corsheaders',
 
     # Scam Hunter apps
     'accounts',
@@ -46,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

@@ -65,6 +65,19 @@ These have slots in the code but no files yet. The site hides each slot cleanly 
 | Poster frame for the video | `frontend/public/images/scam-hunter-demo-poster.jpg` |
 | Up to 3 verified Rwanda scam statistics with sources | `rwandaStats` in `frontend/src/content.js` |
 
+## Mobile app (mobile/)
+
+React Native with Expo. It calls the same API as the web app and has no detection logic of its own.
+See [mobile/README.md](mobile/README.md) for setup, including which backend address to use on an
+emulator or a real phone (`localhost` on a phone is the phone itself).
+
+Backend settings that only matter for the mobile app:
+
+- `DJANGO_ALLOWED_HOSTS`: extra hosts, e.g. your computer's LAN IP when testing on a phone with Expo Go.
+  `10.0.2.2` (the Android emulator) is allowed automatically in DEBUG.
+- `DJANGO_CORS_ALLOWED_ORIGINS`: only for running the mobile app in a web browser, e.g. `http://localhost:8081`.
+  Native apps don't use CORS.
+
 ## Apps
 
 | App | What it does |

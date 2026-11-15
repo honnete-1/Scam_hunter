@@ -1,0 +1,61 @@
+// Friendly text for the values the backend returns. Display only: no detection logic lives here.
+import type { CheckType, ConcernLevel, ReportStatus } from '../types/api';
+import type { StatusTone } from '../theme/colors';
+
+export const concernLabels: Record<ConcernLevel, { label: string; tone: StatusTone }> = {
+  HIGH_CONCERN: { label: 'High Concern', tone: 'high' },
+  CAUTION: { label: 'Caution', tone: 'caution' },
+  NO_KNOWN_WARNING_SIGNS: { label: 'No Known Warning Signs', tone: 'clear' },
+};
+
+export const UNAVAILABLE_LABEL = 'Check Could Not Be Completed';
+
+export const indicatorLabels: Record<string, string> = {
+  urgency: 'Urgent pressure',
+  sensitive_information_request: 'Sensitive information request',
+  payment_request: 'Payment request',
+  impersonation: 'Claims to be an organisation',
+  reward_claim: 'Prize or reward claim',
+  emotional_pressure: 'Emotional pressure or threats',
+  ip_address_host: 'Uses an IP address instead of a name',
+  credentials_in_url: 'Hidden destination (@ in the link)',
+  punycode_domain: 'Look-alike characters in the name',
+  url_shortener: 'Shortened link',
+  excessive_subdomains: 'Unusually long website name',
+  suspicious_domain_word: 'Official-sounding word in the name',
+  very_long_url: 'Unusually long link',
+};
+
+// "sensitive_information_request" -> "Sensitive information request" for any type not listed above.
+export function labelForIndicator(type: string) {
+  if (indicatorLabels[type]) return indicatorLabels[type];
+  const words = type.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+export const subjectNames: Record<CheckType, string> = { MESSAGE: 'message', URL: 'link', PHONE: 'phone number' };
+
+export const checkTypeLabels: Record<CheckType, string> = { MESSAGE: 'Message', URL: 'URL', PHONE: 'Phone Number' };
+
+export const reportStatusLabels: Record<ReportStatus, string> = {
+  PENDING: 'Pending',
+  APPROVED: 'Approved',
+  REJECTED: 'Rejected',
+};
+
+export const NETWORK_ERROR = {
+  title: 'Unable to connect to Scam Hunter.',
+  detail: 'Check your internet connection and try again.',
+};
+
+export const SERVER_ERROR = {
+  title: 'Something went wrong on our side.',
+  detail: 'Please try again in a moment.',
+};
+
+export const SAFETY_TIPS = [
+  'Real support teams will never ask you to share your OTP or PIN.',
+  'If a message rushes you, slow down. Call the organisation on a number you already know.',
+  'Prizes you never entered for are a common trick. Real prizes never ask for a fee first.',
+  'A new number claiming to be family? Call the old number or ask something only they would know.',
+];
