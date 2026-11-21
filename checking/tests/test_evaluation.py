@@ -1,4 +1,4 @@
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 
 from checking.analysis_result import ConcernLevel
 from checking.evaluation.evaluate import evaluate_detector
@@ -6,7 +6,7 @@ from checking.requests import MessageCheck
 from checking.services import AnalysisService
 
 
-class CombinationClassificationTests(SimpleTestCase):
+class CombinationClassificationTests(TestCase):
     # These go through the real AnalysisService, so they also check the unchanged thresholds.
     def analyze(self, message):
         return AnalysisService().analyze(MessageCheck(message))
@@ -41,7 +41,7 @@ class CombinationClassificationTests(SimpleTestCase):
         self.assertEqual(result.concern_level, ConcernLevel.NO_KNOWN_WARNING_SIGNS)
 
 
-class EvaluationTargetTests(SimpleTestCase):
+class EvaluationTargetTests(TestCase):
     # MVP targets: at least 80% of suspicious messages flagged, at most 20% of legitimate ones.
     # The challenge set is reported by "evaluate_detector" but not asserted here, so it can't be tuned to pass.
     def test_targets_on_each_evaluation_set(self):

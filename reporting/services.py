@@ -4,6 +4,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from checking.ai_analyzer import redact
 from checking.models import PhoneReferenceRecord, ReferenceSource, URLReferenceRecord
 from checking.requests import extract_domain, normalize_phone_number, normalize_url
 
@@ -105,3 +106,40 @@ def _lock_pending_report(report):
     if report.status != ReportStatus.PENDING:
         raise ModerationError(f"Report #{report.pk} has already been reviewed ({report.status}).")
     return report
+
+
+MAX_PUBLIC_ALERTS = 20
+
+
+def public_alerts():
+    # Recent APPROVED reports for the public "Scam alerts" feed. Pending or rejected
+    # reports are never shown, and neither is who reported them.
+    reports = (
+        CommunityReport.objects.filter(status=ReportStatus.APPROVED)
+        .select_related("moderation_review")
+        .order_by("-moderation_review__reviewed_at")[:MAX_PUBLIC_ALERTS]
+    )
+    alerts = []
+    for report in reports:
+        # Links and numbers are the warning itself, so they stay. Message texts can contain the
+        # victim's own details, so numbers and emails in them are hidden.
+        content = redact(report.content) if report.report_type == ReportType.MESSAGE else report.content
+        alerts.append({
+            "id": report.id,
+            "report_type": report.report_type,
+            "content": content,
+            "approved_at": report.moderation_review.reviewed_at,
+        })
+    return alerts
+
+
+def community_stats():
+    # Real numbers from the database only; nothing here is estimated or invented.
+    approved = CommunityReport.objects.filter(status=ReportStatus.APPROVED)
+    return {
+        "approved_reports": approved.count(),
+        "approved_by_type": {kind: approved.filter(report_type=kind).count() for kind in ReportType.values},
+        "pending_reports": CommunityReport.objects.filter(status=ReportStatus.PENDING).count(),
+        "suspicious_links": URLReferenceRecord.objects.filter(active=True).count(),
+        "suspicious_numbers": PhoneReferenceRecord.objects.filter(active=True).count(),
+    }

@@ -1,13 +1,35 @@
+import re
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 
 from django.conf import settings
 from django.db import DatabaseError
 from django.db.models import Q
 
-from reporting.models import ReportStatus
+from reporting.models import CommunityReport, ReportStatus, ReportType
 
 from .models import PhoneReferenceRecord, URLReferenceRecord
-from .requests import extract_domain, normalize_phone_number, normalize_url
+from .requests import CheckValidationError, extract_domain, normalize_phone_number, normalize_url
+
+# Two messages this similar (0-1) are treated as the same scam template with small changes.
+SIMILARITY_THRESHOLD = 0.6
+MAX_REPORTS_TO_COMPARE = 500
+
+
+def simplify(text):
+    # Lowercase and hide numbers so "send 5,000 RWF" and "send 20,000 RWF" still look alike.
+    return re.sub(r"\d[\d,.]*", "#", " ".join(text.lower().split()))
+
+
+def message_similarity(first, second):
+    return SequenceMatcher(None, simplify(first), simplify(second)).ratio()
+
+
+def same_number(reported_content, phone_number):
+    try:
+        return normalize_phone_number(reported_content) == phone_number
+    except CheckValidationError:
+        return False
 
 
 class LookupStatus:
@@ -68,6 +90,32 @@ class ReferenceRepository:
         except DatabaseError as error:
             return LookupResult(LookupStatus.UNAVAILABLE, error=str(error))
         return self._result_for(record)
+
+    def find_similar_reports(self, message):
+        # Compares a message with APPROVED message reports. match = number of similar reports.
+        try:
+            raise_if_outage_simulated()
+            reported = list(
+                CommunityReport.objects.filter(report_type=ReportType.MESSAGE, status=ReportStatus.APPROVED)
+                .order_by("-created_at")
+                .values_list("content", flat=True)[:MAX_REPORTS_TO_COMPARE]
+            )
+        except DatabaseError as error:
+            return LookupResult(LookupStatus.UNAVAILABLE, error=str(error))
+        similar = sum(1 for content in reported if message_similarity(message, content) >= SIMILARITY_THRESHOLD)
+        return LookupResult(LookupStatus.MATCH if similar else LookupStatus.NO_MATCH, match=similar)
+
+    def phone_reputation(self, phone_number):
+        # Like a caller-ID app: how many approved community reports name this number.
+        phone_number = normalize_phone_number(phone_number)
+        try:
+            raise_if_outage_simulated()
+            reports = CommunityReport.objects.filter(report_type=ReportType.PHONE, status=ReportStatus.APPROVED)
+            dates = [report.created_at for report in reports if same_number(report.content, phone_number)]
+        except DatabaseError as error:
+            return LookupResult(LookupStatus.UNAVAILABLE, error=str(error))
+        reputation = {"approved_reports": len(dates), "first_reported": min(dates).date().isoformat() if dates else None}
+        return LookupResult(LookupStatus.MATCH if dates else LookupStatus.NO_MATCH, match=reputation)
 
     def _result_for(self, record):
         if record is None:

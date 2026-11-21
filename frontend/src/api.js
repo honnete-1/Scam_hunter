@@ -114,6 +114,14 @@ export function submitReport({ reportType, content, details }) {
   });
 }
 
+export function getAlerts() {
+  return request("/reports/alerts/");
+}
+
+export function getCommunityStats() {
+  return request("/reports/stats/");
+}
+
 export function getMyReports() {
   return request("/reports/");
 }

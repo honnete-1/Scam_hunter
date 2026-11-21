@@ -30,6 +30,21 @@ export const indicatorLabels = {
   excessive_subdomains: "Unusually long website name",
   suspicious_domain_word: "Official-sounding word in the name",
   very_long_url: "Unusually long link",
+  ai_assessment: "AI second opinion",
+  known_malicious_link: "Link listed as harmful",
+  new_domain: "Very new website",
+  similar_to_reported: "Matches confirmed community reports",
 };
 
 export const subjectNames = { MESSAGE: "message", URL: "link", PHONE: "phone number" };
+
+// Real results from "python manage.py evaluate_detector" (rules only) and "... --online" (rules + AI).
+// Update these numbers after each new evaluation run.
+export const evaluationResults = {
+  measuredOn: "21 Nov 2026",
+  sets: [
+    { name: "Main", size: "30 scam + 30 normal messages", rules: { detected: 100, falseAlarms: 0 }, withAI: { detected: 100, falseAlarms: 0 } },
+    { name: "Holdout", size: "15 + 15", rules: { detected: 100, falseAlarms: 0 }, withAI: { detected: 100, falseAlarms: 0 } },
+    { name: "Challenge (unseen)", size: "20 + 20", rules: { detected: 60, falseAlarms: 5 }, withAI: { detected: 95, falseAlarms: 10 } },
+  ],
+};

@@ -24,6 +24,16 @@ export const indicatorLabels: Record<string, string> = {
   excessive_subdomains: 'Unusually long website name',
   suspicious_domain_word: 'Official-sounding word in the name',
   very_long_url: 'Unusually long link',
+  ai_assessment: 'AI second opinion',
+  known_malicious_link: 'Link listed as harmful',
+  new_domain: 'Very new website',
+  similar_to_reported: 'Matches confirmed community reports',
+};
+
+export const checkStatusText: Record<string, string> = {
+  COMPLETED: 'Checked',
+  NOT_CONFIGURED: 'Not set up',
+  UNAVAILABLE: "Couldn't run",
 };
 
 // "sensitive_information_request" -> "Sensitive information request" for any type not listed above.

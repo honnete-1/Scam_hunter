@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
+import AlertsPage from "./pages/AlertsPage";
+import ArchitecturePage from "./pages/ArchitecturePage";
 import CheckPage from "./pages/CheckPage";
 import HomePage from "./pages/HomePage";
 import HowItWorksPage from "./pages/HowItWorksPage";
@@ -28,6 +30,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/check" element={<CheckPage />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/architecture" element={<ArchitecturePage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/my-reports" element={<MyReportsPage />} />
           <Route path="/login" element={<LoginPage />} />

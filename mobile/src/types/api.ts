@@ -12,6 +12,16 @@ export type Indicator = {
   explanation: string;
 };
 
+export type CheckRow = {
+  id: string;
+  label: string;
+  status: 'COMPLETED' | 'NOT_CONFIGURED' | 'UNAVAILABLE';
+  finding: boolean;
+  detail: string;
+};
+
+export type PhoneReputation = { approved_reports: number; first_reported: string | null };
+
 export type AnalysisResult = {
   status: ResultStatus;
   concern_level: ConcernLevel | null;
@@ -19,6 +29,11 @@ export type AnalysisResult = {
   reference_match: boolean;
   explanation: string;
   safer_action: string;
+  // Added with the AI and online checks; optional so older responses still work.
+  checks?: CheckRow[];
+  reputation?: PhoneReputation | null;
+  // The AI model's scam-likelihood score (0-100), or null when the AI did not run.
+  ai_score?: number | null;
 };
 
 export type User = {

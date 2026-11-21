@@ -1,13 +1,15 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import CommunityReport
 from .serializers import CommunityReportSerializer, ModerationInputSerializer
-from .services import ModerationError, approve_report, reject_report, submit_report
+from .services import (
+    ModerationError, approve_report, community_stats, public_alerts, reject_report, submit_report,
+)
 
 
 class CommunityReportListCreateView(generics.ListCreateAPIView):
@@ -49,3 +51,20 @@ class ApproveReportView(BaseModerationView):
 @extend_schema(request=ModerationInputSerializer, responses=CommunityReportSerializer)
 class RejectReportView(BaseModerationView):
     moderate = staticmethod(reject_report)
+
+
+@extend_schema(request=None, responses=None)
+class PublicAlertsView(APIView):
+    # Anyone can read the alerts feed; it only contains moderator-approved reports.
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(public_alerts())
+
+
+@extend_schema(request=None, responses=None)
+class CommunityStatsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(community_stats())

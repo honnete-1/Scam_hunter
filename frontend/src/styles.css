@@ -1239,6 +1239,319 @@ section[id] {
   margin: 0 0 4px;
 }
 
+/* ---------- How we checked ---------- */
+.checks {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+.check-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9375rem;
+}
+
+.check-row__label {
+  font-weight: 600;
+}
+
+.check-row__status {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.check-row__status--completed {
+  color: var(--status-clear);
+}
+
+.check-row__status--finding {
+  color: var(--status-high);
+}
+
+.check-row__detail {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.reputation {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--status-high-bg);
+  color: var(--status-high);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+/* ---------- AI score ---------- */
+.score {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--tone-border);
+  border-radius: 12px;
+  background: var(--tone-bg);
+}
+
+.score__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.score__label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.score__value {
+  font: 700 1.75rem/1 "Space Grotesk", system-ui, sans-serif;
+  color: var(--tone);
+}
+
+.score__bar {
+  height: 8px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.score__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tone);
+}
+
+.score__note {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Architecture diagram ---------- */
+.arch {
+  display: grid;
+  gap: 0;
+}
+
+.arch-lane {
+  padding: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.arch-lane__label {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--link);
+}
+
+.arch-nodes,
+.arch-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arch-node,
+.arch-step {
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.arch-node--external {
+  border-style: dashed;
+}
+
+.arch-node__title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.arch-node__subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.arch-step {
+  position: relative;
+  flex: 1 1 120px;
+}
+
+.arch-step__number {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--on-blue);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* Arrows between pipeline steps on wide screens. */
+.arch-pipeline .arch-step + .arch-step::before {
+  content: "→";
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.arch-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.arch-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.arch-connector__arrow {
+  font-size: 1.25rem;
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.arch-legend {
+  margin-top: 12px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.9375rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.data-table thead th {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.data-table__note {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+@media (max-width: 760px) {
+  .arch-split {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .arch-split .arch-lane + .arch-lane {
+    margin-top: 12px;
+  }
+
+  .arch-pipeline {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .arch-pipeline .arch-step {
+    flex: 0 0 auto;
+  }
+
+  /* On phones the steps stack, so the arrows point down. */
+  .arch-pipeline .arch-step + .arch-step::before {
+    content: "↓";
+    left: 50%;
+    top: -10px;
+  }
+}
+
+/* ---------- Scam alerts page ---------- */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 0 0 40px;
+}
+
+.stat-box {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.stat-box__value {
+  display: block;
+  font: 700 2rem/1 "Space Grotesk", system-ui, sans-serif;
+}
+
+.stat-box__label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.alert-item {
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+
+.alert-item__content {
+  margin: 6px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .stat-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Steps ---------- */
 .steps {
   display: grid;

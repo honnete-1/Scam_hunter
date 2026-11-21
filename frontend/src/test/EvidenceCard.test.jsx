@@ -83,3 +83,50 @@ describe("EvidenceCard", () => {
     expect(screen.getByText("Emotional pressure or threats")).toBeInTheDocument();
   });
 });
+
+describe("New checking layers", () => {
+  it("lists every check that ran, including ones that could not run", async () => {
+    renderCard({
+      ...CAUTION_RESULT,
+      checks: [
+        { id: "rules", label: "Scam-pattern rules", status: "COMPLETED", finding: true, detail: "" },
+        { id: "ai", label: "AI analysis", status: "UNAVAILABLE", finding: false, detail: "" },
+        { id: "safe_browsing", label: "Google Safe Browsing", status: "NOT_CONFIGURED", finding: false, detail: "" },
+      ],
+    });
+    await userEvent.click(screen.getByRole("button", { name: "How we checked (3 checks)" }));
+    expect(screen.getByText("Found a warning")).toBeInTheDocument();
+    expect(screen.getByText("Couldn't run")).toBeInTheDocument();
+    expect(screen.getByText("Not set up")).toBeInTheDocument();
+  });
+
+  it("shows how many moderator-approved reports name a phone number", () => {
+    renderCard(
+      { ...CAUTION_RESULT, concern_level: "HIGH_CONCERN", indicators: [], reference_match: true,
+        reputation: { approved_reports: 3, first_reported: "2026-11-13" } },
+      "PHONE"
+    );
+    expect(screen.getByText(/Reported by 3 community members, first on 2026-11-13/)).toBeInTheDocument();
+  });
+
+  it("shows the AI finding with a friendly label", () => {
+    renderCard({
+      ...CAUTION_RESULT,
+      indicators: [{ type: "ai_assessment", evidence: "Looks like a fake prize.", explanation: "An AI model also rated it as scam-like." }],
+    });
+    expect(screen.getByText("AI second opinion")).toBeInTheDocument();
+  });
+});
+
+describe("AI score", () => {
+  it("shows the AI scam-likelihood percentage as a meter", () => {
+    renderCard({ ...CAUTION_RESULT, ai_score: 90 });
+    expect(screen.getByText("90%")).toBeInTheDocument();
+    expect(screen.getByRole("meter", { name: "AI scam-likelihood score" })).toHaveAttribute("aria-valuenow", "90");
+  });
+
+  it("shows no score when the AI did not run", () => {
+    renderCard({ ...CAUTION_RESULT, ai_score: null });
+    expect(screen.queryByRole("meter")).not.toBeInTheDocument();
+  });
+});

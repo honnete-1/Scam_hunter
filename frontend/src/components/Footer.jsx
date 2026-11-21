@@ -19,6 +19,8 @@ export default function Footer() {
           <ul className="footer__links">
             <li><Link to="/check">Check</Link></li>
             <li><Link to="/how-it-works">How It Works</Link></li>
+            <li><Link to="/alerts">Scam Alerts</Link></li>
+            <li><Link to="/architecture">Architecture</Link></li>
             <li><Link to="/report">Report</Link></li>
             <li><a href="/admin/">Moderator login</a></li>
           </ul>

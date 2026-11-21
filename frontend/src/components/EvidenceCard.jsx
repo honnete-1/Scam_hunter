@@ -79,6 +79,70 @@ export function SaferAction({ text }) {
   );
 }
 
+const CHECK_STATUS_TEXT = { COMPLETED: "Checked", NOT_CONFIGURED: "Not set up", UNAVAILABLE: "Couldn't run" };
+
+// Lists every check behind the result, including the ones that could not run.
+export function ChecksPerformed({ checks }) {
+  const [open, setOpen] = useState(false);
+  if (!checks || checks.length === 0) return null;
+  return (
+    <div className="evidence__section">
+      <button type="button" className="btn btn--text show-more" aria-expanded={open} onClick={() => setOpen(!open)}>
+        {open ? "Hide how we checked" : `How we checked (${checks.length} checks)`}
+      </button>
+      {open && (
+        <ul className="checks">
+          {checks.map((check) => (
+            <li className="check-row" key={check.id}>
+              <span className="check-row__label">{check.label}</span>
+              <span className={`check-row__status check-row__status--${check.finding ? "finding" : check.status.toLowerCase()}`}>
+                {check.finding ? "Found a warning" : CHECK_STATUS_TEXT[check.status] || check.status}
+              </span>
+              {check.detail && <p className="check-row__detail">{check.detail}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// The AI model's own scam-likelihood score. It is a second opinion: the concern level comes from all checks.
+export function AIScore({ score }) {
+  if (score === null || score === undefined) return null;
+  const tone = score >= 70 ? "high" : score >= 40 ? "caution" : "clear";
+  return (
+    <div className={`score tone-${tone}`}>
+      <div className="score__top">
+        <span className="score__label">AI scam-likelihood score</span>
+        <span className="score__value">{score}%</span>
+      </div>
+      <div
+        className="score__bar"
+        role="meter"
+        aria-label="AI scam-likelihood score"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={score}
+      >
+        <div className="score__fill" style={{ width: `${score}%` }} />
+      </div>
+      <p className="score__note">An AI second opinion. The result above is based on all the checks together.</p>
+    </div>
+  );
+}
+
+function Reputation({ reputation }) {
+  if (!reputation || !reputation.approved_reports) return null;
+  const count = reputation.approved_reports;
+  return (
+    <p className="reputation">
+      Reported by {count} community member{count === 1 ? "" : "s"}
+      {reputation.first_reported ? `, first on ${reputation.first_reported}` : ""}. Each report was checked by a moderator.
+    </p>
+  );
+}
+
 export default function EvidenceCard({ result, checkType, onReport, onCheckAnother, onTryAgain, ref }) {
   const headingId = useId();
   const subject = subjectNames[checkType] || "content";
@@ -94,6 +158,7 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
           The required reference check is currently unavailable.
         </h3>
         <p className="muted">This does not mean the content is safe.</p>
+        <AIScore score={result.ai_score} />
 
         {indicators.length > 0 && (
           <div className="evidence__section">
@@ -103,6 +168,7 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
         )}
 
         <SaferAction text={result.safer_action} />
+        <ChecksPerformed checks={result.checks} />
         <div className="evidence__actions">
           <button type="button" className="btn btn--primary" onClick={onTryAgain}>Try Again</button>
           <button type="button" className="btn btn--secondary" onClick={onCheckAnother}>Check another</button>
@@ -136,6 +202,8 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
       </p>
       <h3 id={headingId} className="evidence__summary">{summary}</h3>
       {detail && <p className="muted">{detail}</p>}
+      <Reputation reputation={result.reputation} />
+      <AIScore score={result.ai_score} />
 
       {(indicators.length > 0 || result.reference_match) && (
         <div className="evidence__section">
@@ -145,6 +213,7 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
       )}
 
       <SaferAction text={result.safer_action} />
+      <ChecksPerformed checks={result.checks} />
 
       <div className="evidence__actions">
         {isClear ? (

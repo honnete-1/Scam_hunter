@@ -33,11 +33,16 @@ INDICATOR_PHRASES = {
     "excessive_subdomains": "has an unusually large number of parts in its website name",
     "suspicious_domain_word": "has a word in its website name often used by fake login pages",
     "very_long_url": "is unusually long",
+    "ai_assessment": "was rated as scam-like by an AI model",
+    "known_malicious_link": "contains a link listed as harmful by an online safety service",
+    "new_domain": "links to a website that was registered very recently",
+    "similar_to_reported": "is very similar to scams already confirmed by the community",
 }
 
 # Safer actions linked to specific evidence. Listed in priority order so the
 # most important advice comes first.
 INDICATOR_ACTIONS = [
+    ("known_malicious_link", "Do not open the link. It is listed as harmful by an online safety service."),
     ("sensitive_information_request", "Never share passwords, PINs or one-time codes (OTPs), even if the request looks official."),
     ("payment_request", "Do not send money until you have verified the request independently."),
     ("impersonation", "Contact the organisation using its official website or phone number, not the details in the message."),
@@ -45,6 +50,8 @@ INDICATOR_ACTIONS = [
     ("ip_address_host", "Do not open this link or enter any details on the page it leads to."),
     ("punycode_domain", "Check the website name letter by letter, or type the official address yourself."),
     ("url_shortener", "Avoid opening shortened links from unexpected messages."),
+    ("new_domain", "Be careful with brand-new websites. Type the official address yourself instead."),
+    ("similar_to_reported", "Do not reply. Messages like this have already been reported as scams."),
     ("emotional_pressure", "Take your time. Call the person or organisation back on a number you already know."),
     ("reward_claim", "Be careful with unexpected prizes. Real prizes do not ask you to pay a fee first."),
     ("urgency", "Do not rush. Verify the sender through an official contact before responding."),
@@ -54,11 +61,19 @@ DEFAULT_CAUTION_ACTION = "Avoid opening the link or entering any details until y
 
 
 class AnalysisResult:
-    def __init__(self, check_type, warning_indicators=None, reference_match=None, lookup_completed=True):
+    def __init__(self, check_type, warning_indicators=None, reference_match=None, lookup_completed=True,
+                 checks=None, reputation=None, ai_score=None):
         self.check_type = check_type
         self.warning_indicators = warning_indicators or []
         self.reference_match = reference_match
         self.lookup_completed = lookup_completed
+        # Every check that ran (or could not run), shown to the user as "How we checked".
+        self.checks = checks or []
+        # Phone numbers only: how many approved community reports name this number.
+        self.reputation = reputation
+        # Messages only: the AI model's scam-likelihood score (0-100). Shown to the user as a
+        # second opinion; the concern level still comes only from the rules below.
+        self.ai_score = ai_score
 
         self.status = ResultStatus.SUCCESS
         self.concern_level = None
@@ -116,6 +131,10 @@ class AnalysisResult:
                 "This does not guarantee that it is safe."
             )
 
+        # Be honest when optional checks were missing, so fewer signals never sounds like "all clear".
+        if any(check["status"] == "UNAVAILABLE" for check in self.checks):
+            sentences.append("Some online checks could not run this time, so this result is based on fewer signals.")
+
         self.explanation = " ".join(sentences)
         return self.explanation
 
@@ -163,4 +182,7 @@ class AnalysisResult:
             "reference_match": self.reference_match is not None,
             "explanation": self.explanation,
             "safer_action": self.safer_action,
+            "checks": self.checks,
+            "reputation": self.reputation,
+            "ai_score": self.ai_score,
         }

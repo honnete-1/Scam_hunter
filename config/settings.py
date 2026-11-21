@@ -1,10 +1,16 @@
 # Django settings for the Scam Hunter project.
 
 import os
+import sys
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# API keys and other private settings live in a .env file next to manage.py (see .env.example).
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -28,6 +34,20 @@ CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.environ.get('DJANGO_CORS
 
 # Set to True only for demos/testing: every reference lookup then fails with CHECK_UNAVAILABLE.
 SIMULATE_REFERENCE_OUTAGE = os.environ.get('SIMULATE_REFERENCE_OUTAGE', 'False') == 'True'
+
+# Optional online checks (AI, link reputation, domain age). They are always off while tests
+# run, so tests never call the internet or use up free API limits.
+RUNNING_TESTS = len(sys.argv) > 1 and sys.argv[1] == 'test'
+ONLINE_CHECKS_ENABLED = os.environ.get('SCAM_HUNTER_ONLINE_CHECKS', 'True') == 'True' and not RUNNING_TESTS
+
+# AI second opinion: any OpenAI-compatible API. Defaults to Groq's free tier.
+AI_API_KEY = os.environ.get('SCAM_HUNTER_AI_API_KEY', '')
+AI_BASE_URL = os.environ.get('SCAM_HUNTER_AI_BASE_URL', 'https://api.groq.com/openai/v1')
+AI_MODEL = os.environ.get('SCAM_HUNTER_AI_MODEL', 'openai/gpt-oss-20b')
+
+# Link reputation services (free keys, non-commercial use).
+GOOGLE_SAFE_BROWSING_API_KEY = os.environ.get('GOOGLE_SAFE_BROWSING_API_KEY', '')
+URLHAUS_AUTH_KEY = os.environ.get('URLHAUS_AUTH_KEY', '')
 
 
 # Application definition

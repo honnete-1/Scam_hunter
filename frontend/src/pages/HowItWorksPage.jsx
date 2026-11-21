@@ -34,6 +34,17 @@ const MESSAGE_SIGNS = [
   "Emotional pressure or threats",
 ];
 
+const LAYERS = [
+  { name: "Scam-pattern rules", text: "Look for behaviour such as urgency, requests for codes or money, and false claims of authority." },
+  { name: "Approved records", text: "Links and numbers are compared with scams that moderators have confirmed." },
+  { name: "Community reports", text: "Messages are compared with confirmed scam messages, so small changes in wording still match." },
+  {
+    name: "AI second opinion",
+    text: "An open AI model also reviews messages. Phone numbers, emails and codes are removed before the text is sent, and the AI can only add a warning, never remove one.",
+  },
+  { name: "Online link checks", text: "Links are checked with Google Safe Browsing and the URLhaus malware list, and very new websites are flagged." },
+];
+
 const LINK_SIGNS = [
   "An IP address instead of a website name",
   "An @ symbol hiding the real destination",
@@ -83,6 +94,24 @@ export default function HowItWorksPage() {
           </div>
           <p className="muted" style={{ marginTop: 24 }}>
             Links and phone numbers are also compared with records approved by moderators.
+          </p>
+        </div>
+      </section>
+
+      <section className="section section--tight" aria-labelledby="layers-title">
+        <div className="container">
+          <h2 id="layers-title" className="section-title">The checks behind every result</h2>
+          <dl className="meaning-list">
+            {LAYERS.map((layer) => (
+              <div className="meaning" key={layer.name}>
+                <dt><strong>{layer.name}</strong></dt>
+                <dd>{layer.text}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="muted" style={{ marginTop: 24 }}>
+            Each check that finds something adds one warning sign. Every result lists the checks that ran,
+            and any that could not run.
           </p>
         </div>
       </section>

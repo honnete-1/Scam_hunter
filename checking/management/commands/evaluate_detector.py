@@ -6,9 +6,18 @@ from checking.evaluation.evaluate import EVALUATION_SETS, evaluate_detector
 class Command(BaseCommand):
     help = "Run the message detector over the evaluation sets and print the results."
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--online", action="store_true",
+            help="Also use the AI model and online link checks (needs API keys in .env; runs slowly to respect free limits).",
+        )
+        parser.add_argument("--set", choices=list(EVALUATION_SETS), help="Only run one evaluation set.")
+
     def handle(self, *args, **options):
-        for set_name in EVALUATION_SETS:
-            self.print_report(set_name, evaluate_detector(set_name), options["verbosity"])
+        mode = "rules + AI + online checks" if options["online"] else "rules only"
+        self.stdout.write(f"Mode: {mode}")
+        for set_name in [options["set"]] if options["set"] else EVALUATION_SETS:
+            self.print_report(set_name, evaluate_detector(set_name, options["online"]), options["verbosity"])
 
     def print_report(self, set_name, report, verbosity):
         self.stdout.write(f"\n===== {set_name} set =====")

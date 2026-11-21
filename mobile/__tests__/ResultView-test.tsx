@@ -85,3 +85,36 @@ test('reporting is a separate action the user chooses', async () => {
   await userEvent.setup().press(screen.getByRole('button', { name: 'Report This' }));
   expect(handlers.onReport).toHaveBeenCalledTimes(1);
 });
+
+test('lists the checks behind the result, including ones that could not run', async () => {
+  const user = userEvent.setup();
+  await renderResult({
+    ...CAUTION_RESULT,
+    checks: [
+      { id: 'rules', label: 'Scam-pattern rules', status: 'COMPLETED', finding: true, detail: '' },
+      { id: 'ai', label: 'AI analysis', status: 'UNAVAILABLE', finding: false, detail: '' },
+    ],
+  });
+  await user.press(screen.getByRole('button', { name: 'How we checked (2 checks)' }));
+  expect(screen.getByText('Found a warning')).toBeOnTheScreen();
+  expect(screen.getByText("Couldn't run")).toBeOnTheScreen();
+});
+
+test('shows the community reputation of a phone number', async () => {
+  await renderResult(
+    { ...CAUTION_RESULT, concern_level: 'HIGH_CONCERN', indicators: [], reference_match: true, reputation: { approved_reports: 2, first_reported: '2026-11-13' } },
+    'PHONE'
+  );
+  expect(screen.getByText(/Reported by 2 community members, first on 2026-11-13/)).toBeOnTheScreen();
+});
+
+test('shows the AI scam-likelihood score when the AI ran', async () => {
+  await renderResult({ ...CAUTION_RESULT, ai_score: 90 });
+  expect(screen.getByText('90%')).toBeOnTheScreen();
+  expect(screen.getByRole('progressbar', { name: 'AI scam-likelihood score' })).toBeOnTheScreen();
+});
+
+test('shows no score when the AI did not run', async () => {
+  await renderResult({ ...CAUTION_RESULT, ai_score: null });
+  expect(screen.queryByText('AI scam-likelihood score')).not.toBeOnTheScreen();
+});

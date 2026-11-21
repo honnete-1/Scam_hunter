@@ -77,7 +77,7 @@ class ConcernClassificationTests(SimpleTestCase):
         self.assertIn("one-time codes", result.safer_action)
 
 
-class AnalysisServiceMessageTests(SimpleTestCase):
+class AnalysisServiceMessageTests(TestCase):
     def setUp(self):
         self.service = AnalysisService()
 
@@ -103,6 +103,12 @@ class UnavailableRepository:
         return LookupResult(LookupStatus.UNAVAILABLE, error="offline")
 
     def find_phone_match(self, phone_number):
+        return LookupResult(LookupStatus.UNAVAILABLE, error="offline")
+
+    def find_similar_reports(self, message):
+        return LookupResult(LookupStatus.UNAVAILABLE, error="offline")
+
+    def phone_reputation(self, phone_number):
         return LookupResult(LookupStatus.UNAVAILABLE, error="offline")
 
 

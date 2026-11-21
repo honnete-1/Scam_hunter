@@ -1,4 +1,7 @@
 # Runs the real AnalysisService over an evaluation set and counts what was flagged.
+import time
+
+from checking.ai_analyzer import AIAssessment, CheckStatus
 from checking.analysis_result import ConcernLevel
 from checking.requests import MessageCheck
 from checking.services import AnalysisService
@@ -14,10 +17,28 @@ EVALUATION_SETS = {
 }
 
 
-def analyze_messages(messages):
-    service = AnalysisService()
+# Groq's free tier allows about 30 requests a minute, so online runs wait between messages.
+ONLINE_DELAY_SECONDS = 2.1
+
+
+class RulesOnlyAI:
+    def analyze(self, message):
+        return AIAssessment(CheckStatus.NOT_CONFIGURED)
+
+
+def build_service(online):
+    # By default only the rules and our own database are used, so results can be repeated exactly.
+    if online:
+        return AnalysisService()
+    return AnalysisService(ai_analyzer=RulesOnlyAI(), link_checker=lambda url, domain: [])
+
+
+def analyze_messages(messages, online=False):
+    service = build_service(online)
     rows = []
     for message in messages:
+        if online and rows:
+            time.sleep(ONLINE_DELAY_SECONDS)
         result = service.analyze(MessageCheck(message))
         rows.append({
             "message": message,
@@ -28,10 +49,10 @@ def analyze_messages(messages):
     return rows
 
 
-def evaluate_detector(set_name="main"):
+def evaluate_detector(set_name="main", online=False):
     suspicious_messages, legitimate_messages = EVALUATION_SETS[set_name]
-    suspicious = analyze_messages(suspicious_messages)
-    legitimate = analyze_messages(legitimate_messages)
+    suspicious = analyze_messages(suspicious_messages, online)
+    legitimate = analyze_messages(legitimate_messages, online)
 
     detected = [row for row in suspicious if row["flagged"]]
     false_positives = [row for row in legitimate if row["flagged"]]

@@ -108,6 +108,50 @@ Classification rules (`checking/analysis_result.py`):
 
 Checked content is never saved to the database.
 
+## AI and online checks
+
+Besides the rules, every check can use extra layers. Each one that finds something adds **one**
+warning category, so the concern thresholds stay the same (1–2 categories → Caution, 3+ → High Concern).
+
+| Layer | What it does | Needs |
+|-------|--------------|-------|
+| Approved records | Links inside messages are also matched against approved URL records | – |
+| Community reports | A message very similar to an approved scam message counts as `similar_to_reported`; phone results show how many approved reports name the number | – |
+| AI second opinion | An open model (`openai/gpt-oss-20b` on Groq's free tier by default) rates messages; at 70%+ confidence it adds `ai_assessment` | `SCAM_HUNTER_AI_API_KEY` |
+| Google Safe Browsing | Links listed as phishing or malware add `known_malicious_link` | `GOOGLE_SAFE_BROWSING_API_KEY` |
+| URLhaus | Websites hosting known malware links add `known_malicious_link` | `URLHAUS_AUTH_KEY` |
+| Website age (RDAP) | Websites registered less than 30 days ago add `new_domain` | – |
+
+Setup: copy `.env.example` to `.env` next to `manage.py` and add the keys you have, then restart Django.
+`.env` is git-ignored, so never commit it. Missing keys are fine: those checks show as "Not set up".
+
+Rules that keep these layers safe:
+
+- **The AI can only add a warning, never remove one.** A scam message that tries to trick the AI cannot hide what the rules found.
+- **Privacy:** phone numbers, emails and codes are removed from the text before it is sent to the AI service.
+  Results list every check under "How we checked", including any that could not run.
+- **Only the reference lookup is required.** If an optional online check fails, the result still appears and says
+  "Some online checks could not run". The AI and other online services can never turn a result into "safe".
+- Online checks are switched off automatically while tests run.
+
+Message results also include `ai_score`: the AI model's own scam-likelihood estimate (0–100), or `null`
+when the AI did not run. The web and mobile apps show it as "AI scam-likelihood score". It is a second
+opinion only: the concern level still comes from the rules above, and no number is ever made up.
+
+The web app's **Architecture** page (`/architecture`) shows the system diagram and the measured detection rates.
+
+Measure the effect of the AI on the evaluation sets (uses your free quota slowly, about 30 messages a minute):
+
+```bash
+python manage.py evaluate_detector --online
+```
+
+Public community API: `GET /api/reports/alerts/` (recent approved reports, with personal details hidden) and
+`GET /api/reports/stats/` (real counts), shown on the web app's **Scam Alerts** page.
+
+Real-time SMS and call protection (Android, like a caller-ID app) is planned next: see
+[docs/realtime-protection.md](docs/realtime-protection.md).
+
 ## Message detector and its limits
 
 The message detector (`MESSAGE_RULES` in `checking/rule_engine.py`) is rule-based, not machine
