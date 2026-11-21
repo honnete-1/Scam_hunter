@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
+    'drf_spectacular_sidecar',
     'corsheaders',
 
     # Scam Hunter apps
@@ -169,8 +170,21 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+# API documentation, served at / (ReDoc) and /api/docs/ (interactive Swagger UI).
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Scam Hunter API',
-    'DESCRIPTION': 'Check suspicious messages, URLs and phone numbers, and submit community reports.',
-    'VERSION': '0.1.0',
+    'DESCRIPTION': (BASE_DIR / 'config' / 'api_description.md').read_text(encoding='utf-8'),
+    'VERSION': '2.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'Checks', 'description': 'Check a message, link or phone number. No account needed; nothing is stored.'},
+        {'name': 'Community reports', 'description': 'Submit reports, list your own, and read the public alerts feed and statistics.'},
+        {'name': 'Moderation', 'description': 'Staff only. Approve or reject pending reports. Approved links and numbers become reference records.'},
+        {'name': 'Accounts', 'description': 'Sign up, log in to get a token, log out and read your profile.'},
+    ],
+    # The documentation pages load their scripts from this server, so they work offline too.
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
 }

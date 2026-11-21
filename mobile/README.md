@@ -38,6 +38,48 @@ npx expo start                  # press a for Android, i for iOS, w for web, or 
 
 If you change `.env.local`, or edits don't show up, restart with `npx expo start --clear`.
 
+## Test on your Android phone (Expo Go)
+
+1. Install **Expo Go** from the Play Store. Put the phone on the same Wi-Fi as the computer.
+2. Find the computer's Wi-Fi IP (`ipconfig`, e.g. `192.168.1.76`) and start the backend for the network:
+   ```bash
+   set DJANGO_ALLOWED_HOSTS=192.168.1.76&& .venv\Scripts\python manage.py runserver 0.0.0.0:8000
+   ```
+3. Start the app pointing at that address:
+   ```bash
+   cd mobile && set EXPO_PUBLIC_API_URL=http://192.168.1.76:8000&& npx expo start
+   ```
+4. In Expo Go, scan the QR code shown in the terminal, or the one on the web app's **Mobile App** page.
+
+If Windows asks whether Python or Node may use the network, allow it on **private** networks, or the phone can't connect.
+
+## Build an installable APK (free Expo account)
+
+```bash
+cd mobile
+npx eas-cli@latest login          # sign in to your free Expo account (you type the password)
+npx eas-cli@latest build -p android --profile preview
+```
+
+The `preview` profile in `eas.json` builds an `.apk` with `EXPO_PUBLIC_API_URL` set to the backend's Wi-Fi address,
+so change that address first if yours is different. The build runs in Expo's cloud (the free plan includes 15 Android builds)
+and ends with a download link. Put that link in `frontend/.env.local` as `VITE_ANDROID_APK_URL` and the web app's
+Mobile App page shows a download button. `expo-build-properties` allows plain HTTP to the local backend; use HTTPS
+for a real deployment.
+
+## Native features
+
+| Feature | How it works | Permission |
+|---------|--------------|------------|
+| QR code scanner | Scan a QR code; its link, number or text is checked (fake payment QR codes are a growing scam) | Camera, asked when you first scan |
+| Paste from clipboard | One tap; the clipboard is read only when you tap | – |
+| Haptic feedback | A short vibration that matches the result | Vibrate (automatic) |
+| Share warning | Shares the verdict and safer action, never the checked content | – |
+| App lock | Optional fingerprint, face or PIN lock (Profile → Security) | Biometrics, asked when you turn it on |
+| Offline banner | Shows when the phone has no connection | Network state (automatic) |
+
+SMS, call log, contacts, microphone and storage permissions are explicitly blocked in `app.json`.
+
 ## Commands
 
 ```bash

@@ -30,3 +30,30 @@ class CommunityReportSerializer(serializers.ModelSerializer):
 
 class ModerationInputSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True)
+
+
+# The serializers below only describe responses for the API documentation.
+
+class PublicAlertSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    report_type = serializers.ChoiceField(choices=ReportType.choices)
+    content = serializers.CharField(help_text="Links and numbers as reported; numbers and emails inside messages are hidden.")
+    approved_at = serializers.DateTimeField(help_text="When a moderator approved the report.")
+
+
+class ApprovedByTypeSerializer(serializers.Serializer):
+    MESSAGE = serializers.IntegerField()
+    URL = serializers.IntegerField()
+    PHONE = serializers.IntegerField()
+
+
+class CommunityStatsSerializer(serializers.Serializer):
+    approved_reports = serializers.IntegerField()
+    approved_by_type = ApprovedByTypeSerializer()
+    pending_reports = serializers.IntegerField(help_text="Waiting for a moderator; they affect nothing yet.")
+    suspicious_links = serializers.IntegerField(help_text="Active approved URL reference records.")
+    suspicious_numbers = serializers.IntegerField(help_text="Active approved phone reference records.")
+
+
+class DetailSerializer(serializers.Serializer):
+    detail = serializers.CharField()

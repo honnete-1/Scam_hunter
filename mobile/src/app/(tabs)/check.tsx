@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import AppText from '../../components/AppText';
+import { SecondaryButton } from '../../components/Buttons';
 import CheckForm from '../../components/CheckForm';
 import Screen from '../../components/Screen';
 import { useCheckSession } from '../../context/CheckSessionContext';
@@ -17,6 +18,7 @@ export default function CheckScreen() {
   return (
     <Screen>
       <AppText variant="title" accessibilityRole="header" style={styles.title}>Check something suspicious</AppText>
+      <SecondaryButton label="Scan a QR Code" onPress={() => router.push('/scan')} style={styles.scan} />
       {/* key: coming from Home with a different type starts the form on that type. */}
       <CheckForm
         key={initialType}
@@ -32,5 +34,6 @@ export default function CheckScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { marginBottom: spacing.xl },
+  title: { marginBottom: spacing.lg },
+  scan: { marginBottom: spacing.xl },
 });

@@ -9,3 +9,6 @@ db.sqlite3
 # Frontend
 frontend/node_modules/
 frontend/dist/
+
+# Machine-specific settings (local IP addresses, links)
+.env.local

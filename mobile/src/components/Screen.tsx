@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type Styl
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { spacing } from '../theme/spacing';
+import OfflineBanner from './OfflineBanner';
 
 type Props = {
   children: ReactNode;
@@ -27,10 +28,14 @@ export default function Screen({ children, edges = ['top', 'left', 'right'], scr
             keyboardDismissMode="interactive"
             showsVerticalScrollIndicator={false}
           >
+            <OfflineBanner />
             {children}
           </ScrollView>
         ) : (
-          <View style={[styles.flex, content]}>{children}</View>
+          <View style={[styles.flex, content]}>
+            <OfflineBanner />
+            {children}
+          </View>
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>

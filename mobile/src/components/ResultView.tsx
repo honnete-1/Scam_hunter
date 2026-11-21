@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Pressable, Share, StyleSheet, View } from 'react-native';
 import { UNAVAILABLE_LABEL, checkStatusText, concernLabels, labelForIndicator, subjectNames } from '../content/labels';
 import { useTheme } from '../context/ThemeContext';
 import type { StatusTone } from '../theme/colors';
@@ -164,6 +164,17 @@ function useReveal() {
   };
 }
 
+// Shares the verdict and safer action so family and friends are warned too.
+// The checked content itself is not included, so nothing private is shared by accident.
+export function shareWarning(levelLabel: string, summary: string, saferAction: string, subject: string) {
+  const message = `Scam Hunter checked a ${subject}: ${levelLabel}. ${summary}
+
+Safer action: ${saferAction}
+
+Check before you act.`;
+  return Share.share({ message }).catch(() => {});
+}
+
 export default function ResultView({ result, checkType, retrying, onReport, onCheckAnother, onTryAgain }: Props) {
   const { colors } = useTheme();
   const [showDetails, setShowDetails] = useState(false);
@@ -195,6 +206,10 @@ export default function ResultView({ result, checkType, retrying, onReport, onCh
         <ChecksPerformed checks={result.checks} />
         <View style={styles.actions}>
           <PrimaryButton label="Try Again" loading={retrying} loadingLabel="Checking..." onPress={onTryAgain} />
+          <TextButton
+            label="Share Warning"
+            onPress={() => shareWarning(UNAVAILABLE_LABEL, 'The check could not be completed, so do not rely on it yet.', result.safer_action, subject)}
+          />
           <TextButton label="Check Another" onPress={onCheckAnother} />
         </View>
       </Animated.View>
@@ -266,6 +281,7 @@ export default function ResultView({ result, checkType, retrying, onReport, onCh
         ) : (
           <>
             <SecondaryButton label="Report This" onPress={onReport} />
+            <SecondaryButton label="Share Warning" onPress={() => shareWarning(level.label, summary, result.safer_action, subject)} />
             <TextButton label="Check Another" onPress={onCheckAnother} />
           </>
         )}

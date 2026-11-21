@@ -135,7 +135,7 @@ function MobilePreview() {
             Check suspicious content wherever you are. The mobile app keeps the same idea: one clear action
             and a result you can understand at a glance.
           </p>
-          <span className="coming-next">Mobile app coming next</span>
+          <Link to="/mobile" className="btn btn--check">Get the Android App</Link>
         </div>
         <div className="split__visual">
           <PhoneMockup>

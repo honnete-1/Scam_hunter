@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Redirect, router } from 'expo-router';
 import ErrorBanner from '../components/ErrorBanner';
 import ResultView from '../components/ResultView';
@@ -6,11 +6,16 @@ import Screen from '../components/Screen';
 import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
 import { useCheckSession } from '../context/CheckSessionContext';
 import { checkContent } from '../services/api';
+import { resultFeedback } from '../services/feedback';
 
 export default function ResultScreen() {
   const { lastCheck, setLastCheck, setReportDraft } = useCheckSession();
   const [retrying, setRetrying] = useState(false);
   const [failure, setFailure] = useState<'network' | 'server' | null>(null);
+
+  useEffect(() => {
+    if (lastCheck) resultFeedback(lastCheck.result);
+  }, [lastCheck?.result]);
 
   // Nothing to show (e.g. the app was reopened on this screen): go back to checking.
   if (!lastCheck) return <Redirect href="/check" />;

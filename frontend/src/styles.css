@@ -1510,6 +1510,36 @@ section[id] {
   }
 }
 
+/* ---------- Mobile app page ---------- */
+.steps-list {
+  padding-left: 20px;
+  margin: 0 0 20px;
+}
+
+.steps-list li {
+  margin-bottom: 8px;
+}
+
+.qr {
+  margin: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.qr img {
+  display: block;
+}
+
+.qr figcaption {
+  color: #4a4f72;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Scam alerts page ---------- */
 .stat-row {
   display: grid;

@@ -6,6 +6,8 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import LockScreen from '../components/LockScreen';
+import { AppLockProvider, useAppLock } from '../context/AppLockContext';
 import { AuthProvider } from '../context/AuthContext';
 import { CheckSessionProvider } from '../context/CheckSessionContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
@@ -16,6 +18,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function AppStack() {
   const { colors, isDark } = useTheme();
+  const { locked } = useAppLock();
   const header = {
     headerStyle: { backgroundColor: colors.background },
     headerTintColor: colors.text,
@@ -30,10 +33,12 @@ function AppStack() {
       <Stack screenOptions={header}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="result" options={{ title: 'Check Result' }} />
+        <Stack.Screen name="scan" options={{ title: 'Scan QR Code' }} />
         <Stack.Screen name="report" options={{ title: 'Report' }} />
         <Stack.Screen name="login" options={{ title: 'Log In' }} />
         <Stack.Screen name="signup" options={{ title: 'Sign Up' }} />
       </Stack>
+      {locked ? <LockScreen /> : null}
     </>
   );
 }
@@ -61,7 +66,9 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthProvider>
           <CheckSessionProvider>
-            <AppStack />
+            <AppLockProvider>
+              <AppStack />
+            </AppLockProvider>
           </CheckSessionProvider>
         </AuthProvider>
       </ThemeProvider>

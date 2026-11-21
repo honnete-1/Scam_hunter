@@ -46,6 +46,7 @@ export default function Navbar() {
             <li><NavLink to="/check" className={navClass}>Check</NavLink></li>
             <li><NavLink to="/alerts" className={navClass}>Alerts</NavLink></li>
             <li><NavLink to="/architecture" className={navClass}>Architecture</NavLink></li>
+            <li><NavLink to="/mobile" className={navClass}>Mobile App</NavLink></li>
             <li><NavLink to="/report" className={navClass}>Report</NavLink></li>
             {user && <li><NavLink to="/my-reports" className={navClass}>My Reports</NavLink></li>}
           </ul>

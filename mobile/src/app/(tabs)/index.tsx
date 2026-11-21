@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';
-import { PrimaryButton } from '../../components/Buttons';
+import { PrimaryButton, TextButton } from '../../components/Buttons';
 import CheckTypeSelector from '../../components/CheckTypeSelector';
 import MessageVisual from '../../components/MessageVisual';
 import Screen from '../../components/Screen';
@@ -55,6 +55,7 @@ export default function HomeScreen() {
         onPress={() => router.navigate({ pathname: '/check', params: { type } })}
         style={styles.cta}
       />
+      <TextButton label="Scan a QR code instead" onPress={() => router.push('/scan')} style={styles.scan} />
 
       <View style={[styles.tip, { borderTopColor: colors.border }]}>
         <AppText variant="label" muted>Safety tip</AppText>
@@ -71,5 +72,6 @@ const styles = StyleSheet.create({
   visual: { marginTop: spacing.xl, marginBottom: spacing.xl },
   question: { marginBottom: spacing.md },
   cta: { marginTop: spacing.lg },
+  scan: { alignSelf: 'center' },
   tip: { marginTop: spacing.xxl, paddingTop: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, gap: spacing.xs },
 });

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppText from '../../components/AppText';
 import { PrimaryButton, SecondaryButton } from '../../components/Buttons';
 import ErrorBanner from '../../components/ErrorBanner';
+import OfflineBanner from '../../components/OfflineBanner';
 import StatusBadge from '../../components/StatusBadge';
 import { NETWORK_ERROR, SERVER_ERROR, checkTypeLabels, reportStatusLabels } from '../../content/labels';
 import { useAuth } from '../../context/AuthContext';
@@ -94,6 +95,7 @@ export default function ReportsScreen() {
         contentContainerStyle={styles.content}
         refreshControl={user ? <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.text} /> : undefined}
       >
+        <OfflineBanner />
         <AppText variant="title" accessibilityRole="header">My Reports</AppText>
         <AppText muted style={styles.small}>Pending reports don't affect anyone's results until a moderator approves them.</AppText>
         {user ? <SecondaryButton label="Report Something" onPress={newReport} style={styles.button} /> : null}

@@ -1,9 +1,11 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { router } from 'expo-router';
 import AppText from '../../components/AppText';
 import { PrimaryButton, SecondaryButton } from '../../components/Buttons';
 import Screen from '../../components/Screen';
 import { API_URL } from '../../config';
+import { useAppLock } from '../../context/AppLockContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme, type ThemePreference } from '../../context/ThemeContext';
 import { minTouch, radius, spacing } from '../../theme/spacing';
@@ -17,6 +19,15 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
 export default function ProfileScreen() {
   const { colors, preference, setPreference } = useTheme();
   const { user, logout } = useAuth();
+  const appLock = useAppLock();
+  const [lockMessage, setLockMessage] = useState('');
+
+  async function toggleAppLock(next: boolean) {
+    const outcome = await appLock.setEnabled(next);
+    if (outcome === 'not_available') setLockMessage('Set up a fingerprint, face or screen lock on your phone first.');
+    else if (outcome === 'cancelled') setLockMessage('App lock was not changed.');
+    else setLockMessage(next ? 'App lock is on.' : 'App lock is off.');
+  }
 
   return (
     <Screen>
@@ -61,6 +72,28 @@ export default function ProfileScreen() {
       </View>
 
       <View style={[styles.section, { borderColor: colors.border }]}>
+        <AppText variant="label" muted>Security</AppText>
+        <View style={styles.row}>
+          <View style={styles.flex}>
+            <AppText variant="bodyStrong">App lock</AppText>
+            <AppText variant="small" muted>
+              {appLock.available
+                ? 'Ask for your fingerprint, face or phone PIN when opening Scam Hunter.'
+                : 'Needs a fingerprint, face or screen lock set up on this device.'}
+            </AppText>
+          </View>
+          <Switch
+            accessibilityLabel="App lock"
+            value={appLock.enabled}
+            onValueChange={toggleAppLock}
+            disabled={!appLock.available}
+            trackColor={{ true: colors.primary, false: colors.borderStrong }}
+          />
+        </View>
+        {lockMessage ? <AppText variant="small" muted accessibilityLiveRegion="polite">{lockMessage}</AppText> : null}
+      </View>
+
+      <View style={[styles.section, { borderColor: colors.border }]}>
         <AppText variant="label" muted>About Scam Hunter</AppText>
         <AppText>
           Scam Hunter looks for warning signs in messages, links and phone numbers. It cannot prove whether
@@ -75,6 +108,8 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   section: { marginTop: spacing.xl, paddingTop: spacing.xl, borderTopWidth: StyleSheet.hairlineWidth, gap: spacing.sm },
   button: { marginTop: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  flex: { flex: 1, gap: 2 },
   segment: { flexDirection: 'row', padding: 4, borderRadius: radius.md, gap: 4, marginVertical: spacing.xs },
   option: { flex: 1, minHeight: minTouch, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm },
 });

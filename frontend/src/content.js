@@ -48,3 +48,9 @@ export const evaluationResults = {
     { name: "Challenge (unseen)", size: "20 + 20", rules: { detected: 60, falseAlarms: 5 }, withAI: { detected: 95, falseAlarms: 10 } },
   ],
 };
+
+// Mobile app links. Set them in frontend/.env.local (see README); a link is only shown once it is set.
+export const mobileApp = {
+  apkUrl: import.meta.env.VITE_ANDROID_APK_URL || "",
+  expoGoUrl: import.meta.env.VITE_EXPO_GO_URL || "",
+};

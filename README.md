@@ -22,8 +22,9 @@ python manage.py createsuperuser   # moderator account for /admin/
 python manage.py runserver
 ```
 
-- Admin: http://127.0.0.1:8000/admin/
-- API docs (Swagger): http://127.0.0.1:8000/api/docs/
+- **API documentation:** http://127.0.0.1:8000/ (ReDoc reference) and http://127.0.0.1:8000/api/docs/ (interactive Swagger UI)
+- OpenAPI schema: http://127.0.0.1:8000/api/schema/
+- Admin (moderators): http://127.0.0.1:8000/admin/
 
 Run the tests with `python manage.py test`.
 

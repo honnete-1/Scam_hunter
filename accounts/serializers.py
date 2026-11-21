@@ -26,3 +26,9 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "is_staff"]
+
+
+class LoginResponseSerializer(serializers.Serializer):
+    # Only describes the login response in the API docs.
+    token = serializers.CharField(help_text='Send it as "Authorization: Token <token>" on requests that need an account.')
+    user = UserSerializer()

@@ -8,6 +8,7 @@ import CheckPage from "./pages/CheckPage";
 import HomePage from "./pages/HomePage";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import LoginPage from "./pages/LoginPage";
+import MobileAppPage from "./pages/MobileAppPage";
 import MyReportsPage from "./pages/MyReportsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import ReportPage from "./pages/ReportPage";
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/architecture" element={<ArchitecturePage />} />
+          <Route path="/mobile" element={<MobileAppPage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/my-reports" element={<MyReportsPage />} />
           <Route path="/login" element={<LoginPage />} />

@@ -1,11 +1,12 @@
 import { useRef, useState, type ComponentRef } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
 import { checkContent } from '../services/api';
 import { spacing } from '../theme/spacing';
 import type { AnalysisResult, CheckType } from '../types/api';
 import AppText from './AppText';
-import { PrimaryButton } from './Buttons';
+import { PrimaryButton, TextButton } from './Buttons';
 import CheckTypeSelector from './CheckTypeSelector';
 import ErrorBanner from './ErrorBanner';
 import FormField from './FormField';
@@ -65,6 +66,17 @@ export default function CheckForm({ initialType = 'MESSAGE', onResult }: Props) 
   const text = FORM_TEXT[type];
   const value = values[type];
 
+  // The clipboard is only read when the user taps Paste, never in the background.
+  async function pasteFromClipboard() {
+    const pasted = (await Clipboard.getStringAsync().catch(() => '')).trim();
+    if (!pasted) {
+      setFieldError('There is nothing to paste. Copy the message, link or number first.');
+      return;
+    }
+    setFieldError('');
+    setValues((current) => ({ ...current, [type]: pasted }));
+  }
+
   function changeType(next: CheckType) {
     setType(next);
     setFieldError('');
@@ -120,6 +132,7 @@ export default function CheckForm({ initialType = 'MESSAGE', onResult }: Props) 
         editable={!loading}
       />
 
+      <TextButton label="Paste from clipboard" onPress={pasteFromClipboard} style={styles.paste} />
       <PrimaryButton label={text.button} loading={loading} loadingLabel="Checking..." onPress={submit} />
       {loading ? (
         <AppText variant="small" muted style={styles.status} accessibilityLiveRegion="polite">
@@ -142,4 +155,5 @@ export default function CheckForm({ initialType = 'MESSAGE', onResult }: Props) 
 const styles = StyleSheet.create({
   heading: { marginTop: spacing.xl, marginBottom: spacing.lg, gap: spacing.xs },
   status: { textAlign: 'center', marginTop: spacing.md },
+  paste: { alignSelf: 'flex-start', paddingHorizontal: 0, marginTop: -spacing.sm, marginBottom: spacing.sm },
 });
