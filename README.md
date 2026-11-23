@@ -28,6 +28,9 @@ python manage.py runserver
 
 Run the tests with `python manage.py test`.
 
+**Deploying:** see [docs/deploy-render.md](docs/deploy-render.md) (Render, free plan: one web service + one PostgreSQL database).
+Locally `/` shows the API reference; in production the website is served at `/` and the API reference at `/api/`.
+
 ### Database
 
 The website and the Android app share **one database**, always through the Django API (the app never opens

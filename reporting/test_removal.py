@@ -223,3 +223,12 @@ class RemovalRequestAdminTests(MediaTestCase):
             self.assertEqual(self.client.get(url).status_code, 200)
         response = self.client.get("/admin/reporting/communityreport/", {"q": "0788 555 666"})
         self.assertContains(response, "+250788555666")
+
+
+class PublicAlertNumberTests(APITestCase):
+    def test_a_number_reported_in_two_formats_is_one_alert(self):
+        for username, number in [("a", "0783207918"), ("b", "+250 783 207 918")]:
+            user = User.objects.create_user(username, password="pass12345")
+            submit_report(user, ReportType.PHONE, number, review_mode=ReviewMode.DIRECT)
+        alerts = self.client.get("/api/reports/alerts/").data
+        self.assertEqual([alert["content"] for alert in alerts], ["+250783207918"])

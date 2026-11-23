@@ -4,6 +4,8 @@ __pycache__/
 db.sqlite3
 # Uploaded proofs (private)
 media/
+# Built by collectstatic for production
+staticfiles/
 
 # Private keys and settings
 .env

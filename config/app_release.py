@@ -2,6 +2,7 @@
 # website's download button and QR code always point to the latest build without a restart.
 
 import json
+import os
 
 from django.conf import settings
 from django.utils import timezone
@@ -19,8 +20,22 @@ def read_android_release():
         with open(settings.ANDROID_RELEASE_FILE, encoding="utf-8") as file:
             data = json.load(file)
     except (OSError, ValueError):
-        return dict(EMPTY_RELEASE)
+        return release_from_environment()
     return {key: data.get(key) for key in EMPTY_RELEASE}
+
+
+def release_from_environment():
+    # On Render the release file does not survive a deploy, so the link can be set as
+    # environment variables in the Render dashboard instead.
+    apk_url = os.environ.get("SCAM_HUNTER_ANDROID_APK_URL", "").strip()
+    if not apk_url.startswith("https://"):
+        return dict(EMPTY_RELEASE)
+    return {
+        "apk_url": apk_url,
+        "version": os.environ.get("SCAM_HUNTER_ANDROID_VERSION", "").strip() or None,
+        "build_id": None,
+        "published_at": None,
+    }
 
 
 def save_android_release(apk_url, version="", build_id=""):

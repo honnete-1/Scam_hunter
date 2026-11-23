@@ -238,13 +238,26 @@ def public_alerts():
     reports = (
         CommunityReport.objects.filter(status=ReportStatus.APPROVED)
         .select_related("moderation_review")
-        .order_by("-moderation_review__reviewed_at")[:MAX_PUBLIC_ALERTS]
+        .order_by("-moderation_review__reviewed_at")
     )
     alerts = []
+    seen_numbers = set()
     for report in reports:
+        if len(alerts) >= MAX_PUBLIC_ALERTS:
+            break
+        # A number reported several times (in any format) is shown once, in its standard form.
+        if report.report_type == ReportType.PHONE and report.phone_number:
+            if report.phone_number in seen_numbers:
+                continue
+            seen_numbers.add(report.phone_number)
         # Links and numbers are the warning itself, so they stay. Message texts can contain the
         # victim's own details, so numbers and emails in them are hidden.
-        content = redact(report.content) if report.report_type == ReportType.MESSAGE else report.content
+        if report.report_type == ReportType.MESSAGE:
+            content = redact(report.content)
+        elif report.report_type == ReportType.PHONE and report.phone_number:
+            content = report.phone_number
+        else:
+            content = report.content
         alerts.append({
             "id": report.id,
             "report_type": report.report_type,

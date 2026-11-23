@@ -17,16 +17,38 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# The key can be overridden with an environment variable outside local development.
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-pso8^z(e1_6dy2eu1mzsuul6fvn4(0#pdko$$45bf=y2n*i6a3')
+# Render sets RENDER=true on its servers. There the defaults are the safe production ones.
+ON_RENDER = 'RENDER' in os.environ
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False' if ON_RENDER else 'True') == 'True'
+
+# The key can be overridden with an environment variable outside local development.
+# In production it must come from the environment (Render generates one).
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise RuntimeError('Set DJANGO_SECRET_KEY when DEBUG is off.')
+    SECRET_KEY = 'django-insecure-pso8^z(e1_6dy2eu1mzsuul6fvn4(0#pdko$$45bf=y2n*i6a3'
 
 # Extra hosts (e.g. your computer's LAN IP for a phone running Expo Go) can be added as a
 # comma-separated list. 10.0.2.2 is how the Android emulator reaches this computer.
 ALLOWED_HOSTS = ['localhost', '127.0.0.1'] + (['10.0.2.2'] if DEBUG else [])
 ALLOWED_HOSTS += [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if host.strip()]
+# Render gives each service a public address such as scam-hunter.onrender.com.
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# The admin login form posts over HTTPS from the public address.
+CSRF_TRUSTED_ORIGINS = [f'https://{host}' for host in ALLOWED_HOSTS if host not in ('localhost', '127.0.0.1', '10.0.2.2')]
+
+if not DEBUG:
+    # Render ends HTTPS at its proxy and tells Django with this header.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Only needed when the mobile app runs in a web browser (Expo web). Native apps don't use CORS.
 # Example: DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:8081
@@ -75,6 +97,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Serves the admin/API-docs files and the built website without a separate web server.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -177,9 +201,26 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Uploaded files (proofs sent with removal requests). They are private: no URL serves this folder;
+# The built React website (npm run build in frontend/). In production Django serves it too,
+# so the website, the API and the admin share one address. Locally, Vite serves it instead.
+FRONTEND_DIST = BASE_DIR / 'frontend' / 'dist'
+SERVE_FRONTEND = os.environ.get('SCAM_HUNTER_SERVE_FRONTEND', 'False' if DEBUG else 'True') == 'True'
+if SERVE_FRONTEND and FRONTEND_DIST.exists():
+    # Files such as /assets/index-1a2b.js, /favicon.svg and the demo video.
+    WHITENOISE_ROOT = FRONTEND_DIST
+
+# Uploaded files (proofs sent with removal requests) are kept in the database, not on disk:
+# Render's free servers lose their disk at every deploy. They are private: no URL serves them;
 # moderators open a proof only through the admin.
+STORAGES = {
+    'default': {'BACKEND': 'reporting.storage.DatabaseStorage'},
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage' if DEBUG
+        else 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 MEDIA_ROOT = Path(os.environ.get('SCAM_HUNTER_MEDIA_ROOT', BASE_DIR / 'media'))
 # Proof photos can be a few MB.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024

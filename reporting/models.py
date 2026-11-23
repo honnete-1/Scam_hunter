@@ -155,3 +155,14 @@ class RemovalRequest(models.Model):
 
     def __str__(self):
         return f"Removal request #{self.pk} for {self.phone_number} ({self.status})"
+
+
+class StoredFile(models.Model):
+    # The bytes of an uploaded file, used by reporting.storage.DatabaseStorage.
+    name = models.CharField(max_length=255, unique=True)
+    content = models.BinaryField()
+    size = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
