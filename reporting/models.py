@@ -14,6 +14,13 @@ class ReportStatus(models.TextChoices):
     REJECTED = "REJECTED", "Rejected"
 
 
+class ReviewMode(models.TextChoices):
+    # MODERATED: a moderator approves or rejects it first (the default).
+    # DIRECT: phone numbers only; approved automatically when submitted, so the number is blocked at once.
+    MODERATED = "MODERATED", "Send for verification"
+    DIRECT = "DIRECT", "Direct report"
+
+
 class CommunityReport(models.Model):
     # Only content the user deliberately reports is saved here.
     # Normal checks never create one of these.
@@ -28,6 +35,9 @@ class CommunityReport(models.Model):
     details = models.TextField(blank=True)
     status = models.CharField(
         max_length=10, choices=ReportStatus.choices, default=ReportStatus.PENDING
+    )
+    review_mode = models.CharField(
+        max_length=10, choices=ReviewMode.choices, default=ReviewMode.MODERATED
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -9,11 +9,25 @@ const REPORT_TYPES = [
   { value: "PHONE", label: "Phone", hint: "The number that contacted you, with country code if you know it." },
 ];
 
+const REVIEW_MODES = [
+  {
+    value: "MODERATED",
+    title: "Send for verification",
+    detail: "A moderator checks the number first. Best when you are not completely sure.",
+  },
+  {
+    value: "DIRECT",
+    title: "Direct report",
+    detail: "The number is added to the scam list at once and flagged for everyone. Only use this if you are sure it is a scammer.",
+  },
+];
+
 export default function ReportForm({ draft, onSubmitted }) {
   const { forgetUser } = useAuth();
   const [reportType, setReportType] = useState(draft?.type || "MESSAGE");
   const [content, setContent] = useState(draft?.content || "");
   const [details, setDetails] = useState("");
+  const [reviewMode, setReviewMode] = useState("MODERATED");
   const [understood, setUnderstood] = useState(false);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState("");
@@ -32,13 +46,17 @@ export default function ReportForm({ draft, onSubmitted }) {
     if (Object.keys(newErrors).length > 0) return;
 
     setSubmitting(true);
-    const res = await submitReport({ reportType, content, details });
+    // Direct reports only exist for phone numbers.
+    const res = await submitReport({ reportType, content, details, reviewMode: reportType === "PHONE" ? reviewMode : "MODERATED" });
     setSubmitting(false);
 
     if (res.ok) {
       onSubmitted(res.data);
     } else if (res.kind === "validation") {
-      setErrors({ content: firstError(res.data?.content), details: firstError(res.data?.details) });
+      setErrors({
+        content: firstError(res.data?.content) || firstError(res.data?.review_mode),
+        details: firstError(res.data?.details),
+      });
       if (res.data?.report_type) setFormError("Please choose what kind of content you are reporting.");
     } else if (res.kind === "auth") {
       // The saved login is no longer valid, so the page will ask the user to log in again.
@@ -109,6 +127,31 @@ export default function ReportForm({ draft, onSubmitted }) {
         />
       </FormField>
 
+      {reportType === "PHONE" && (
+        <div className="field">
+          <fieldset>
+            <legend>How should this number be reported?</legend>
+            <div className="choice-list">
+              {REVIEW_MODES.map((mode) => (
+                <label key={mode.value} className="choice">
+                  <input
+                    type="radio"
+                    name="review-mode"
+                    value={mode.value}
+                    checked={reviewMode === mode.value}
+                    onChange={() => setReviewMode(mode.value)}
+                  />
+                  <span>
+                    <strong>{mode.title}</strong>
+                    <span className="muted small">{mode.detail}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      )}
+
       <div className="field">
         <label className="checkbox">
           <input
@@ -118,7 +161,11 @@ export default function ReportForm({ draft, onSubmitted }) {
             aria-invalid={errors.understood ? true : undefined}
             aria-describedby={errors.understood ? "report-understood-error" : undefined}
           />
-          <span>I understand this report will be stored and reviewed by a moderator.</span>
+          <span>
+            {reportType === "PHONE" && reviewMode === "DIRECT"
+              ? "I understand this report will be stored and the number will be flagged for everyone straight away."
+              : "I understand this report will be stored and reviewed by a moderator."}
+          </span>
         </label>
         {errors.understood && (
           <p className="field-error" id="report-understood-error" role="alert">{errors.understood}</p>

@@ -1,0 +1,30 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- RECEIVE_SMS only delivers new messages; the inbox (READ_SMS) stays blocked in app.json. -->
+  <uses-permission android:name="android.permission.RECEIVE_SMS" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.READ_CONTACTS" />
+  <!-- "Display over other apps": the warning card on top of the incoming-call screen. -->
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+  <application>
+    <!-- Android calls this for incoming calls once the user picks Scam Hunter as the caller ID & spam app. -->
+    <service
+      android:name=".ScamCallScreeningService"
+      android:exported="true"
+      android:permission="android.permission.BIND_SCREENING_SERVICE">
+      <intent-filter>
+        <action android:name="android.telecom.CallScreeningService" />
+      </intent-filter>
+    </service>
+
+    <!-- BROADCAST_SMS means only the phone system can send this receiver a message. -->
+    <receiver
+      android:name=".SmsScamReceiver"
+      android:exported="true"
+      android:permission="android.permission.BROADCAST_SMS">
+      <intent-filter android:priority="999">
+        <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>

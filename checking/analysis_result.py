@@ -55,14 +55,23 @@ INDICATOR_ACTIONS = [
     ("emotional_pressure", "Take your time. Call the person or organisation back on a number you already know."),
     ("reward_claim", "Be careful with unexpected prizes. Real prizes do not ask you to pay a fee first."),
     ("urgency", "Do not rush. Verify the sender through an official contact before responding."),
+    ("ai_assessment", "Do not reply, share codes or send money until you have checked the sender through an official contact."),
 ]
+
+# A short title for the result, used as the heading of a phone warning.
+HEADLINES = {
+    ConcernLevel.HIGH_CONCERN: "Warning: this looks like a scam",
+    ConcernLevel.CAUTION: "Be careful: warning signs found",
+    ConcernLevel.NO_KNOWN_WARNING_SIGNS: "No known warning signs found",
+}
+UNAVAILABLE_HEADLINE = "The check could not be completed"
 
 DEFAULT_CAUTION_ACTION = "Avoid opening the link or entering any details until you have verified where it really goes."
 
 
 class AnalysisResult:
     def __init__(self, check_type, warning_indicators=None, reference_match=None, lookup_completed=True,
-                 checks=None, reputation=None, ai_score=None):
+                 checks=None, reputation=None, ai_score=None, language=None):
         self.check_type = check_type
         self.warning_indicators = warning_indicators or []
         self.reference_match = reference_match
@@ -74,11 +83,16 @@ class AnalysisResult:
         # Messages only: the AI model's scam-likelihood score (0-100). Shown to the user as a
         # second opinion; the concern level still comes only from the rules below.
         self.ai_score = ai_score
+        # Messages only: the message's language (e.g. "rw"). When it is not English, the service
+        # translates the headline, explanation and safer action, and keeps the English in self.english.
+        self.language = language
+        self.english = None
 
         self.status = ResultStatus.SUCCESS
         self.concern_level = None
         self.explanation = ""
         self.safer_action = ""
+        self.headline = ""
 
     def distinct_indicator_types(self):
         # Count categories, not keywords: two urgent phrases are still one urgency indicator.
@@ -168,6 +182,13 @@ class AnalysisResult:
         self.safer_action = " ".join(actions)
         return self.safer_action
 
+    def generate_headline(self):
+        if self.status == ResultStatus.CHECK_UNAVAILABLE:
+            self.headline = UNAVAILABLE_HEADLINE
+        else:
+            self.headline = HEADLINES[self.concern_level]
+        return self.headline
+
     def _join_phrases(self):
         phrases = [INDICATOR_PHRASES.get(t, t.replace("_", " ")) for t in self.distinct_indicator_types()]
         if len(phrases) == 1:
@@ -185,4 +206,7 @@ class AnalysisResult:
             "checks": self.checks,
             "reputation": self.reputation,
             "ai_score": self.ai_score,
+            "headline": self.headline,
+            "language": self.language,
+            "english": self.english,
         }

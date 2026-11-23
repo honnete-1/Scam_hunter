@@ -5,8 +5,9 @@ import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { firstError, submitReport } from '../services/api';
+import { syncScamNumbers } from '../services/protection';
 import { radius, spacing } from '../theme/spacing';
-import type { CheckType, CommunityReport } from '../types/api';
+import type { CheckType, CommunityReport, ReviewMode } from '../types/api';
 import AppText from './AppText';
 import { PrimaryButton } from './Buttons';
 import CheckTypeSelector from './CheckTypeSelector';
@@ -19,6 +20,19 @@ const CONTENT_HINTS: Record<CheckType, string> = {
   PHONE: 'The number that contacted you, with country code if you know it.',
 };
 
+const REVIEW_OPTIONS: { value: ReviewMode; title: string; detail: string }[] = [
+  {
+    value: 'MODERATED',
+    title: 'Send for verification',
+    detail: 'A moderator checks the number first. Best when you are not completely sure.',
+  },
+  {
+    value: 'DIRECT',
+    title: 'Direct report',
+    detail: 'The number is added to the scam list at once and flagged for everyone. Only use this if you are sure it is a scammer.',
+  },
+];
+
 type Props = {
   draft: { type: CheckType; content: string } | null;
   onSubmitted: (report: CommunityReport) => void;
@@ -30,6 +44,7 @@ export default function ReportForm({ draft, onSubmitted }: Props) {
   const [reportType, setReportType] = useState<CheckType>(draft?.type ?? 'MESSAGE');
   const [content, setContent] = useState(draft?.content ?? '');
   const [details, setDetails] = useState('');
+  const [reviewMode, setReviewMode] = useState<ReviewMode>('MODERATED');
   const [understood, setUnderstood] = useState(false);
   const [errors, setErrors] = useState<{ content?: string; details?: string; understood?: string }>({});
   const [failure, setFailure] = useState<'network' | 'server' | null>(null);
@@ -45,12 +60,20 @@ export default function ReportForm({ draft, onSubmitted }: Props) {
     if (Object.keys(nextErrors).length > 0) return;
 
     setSubmitting(true);
-    const res = await submitReport({ reportType, content, details });
+    // Direct reports only exist for phone numbers.
+    const mode = reportType === 'PHONE' ? reviewMode : 'MODERATED';
+    const res = await submitReport({ reportType, content, details, reviewMode: mode });
     setSubmitting(false);
 
-    if (res.ok) onSubmitted(res.data);
-    else if (res.kind === 'validation') {
-      setErrors({ content: firstError(res.data?.content), details: firstError(res.data?.details) });
+    if (res.ok) {
+      // A direct report is already on the scam list, so refresh this phone's copy for call and SMS warnings.
+      if (res.data.status === 'APPROVED') await syncScamNumbers().catch(() => false);
+      onSubmitted(res.data);
+    } else if (res.kind === 'validation') {
+      setErrors({
+        content: firstError(res.data?.content) || firstError(res.data?.review_mode),
+        details: firstError(res.data?.details),
+      });
     } else if (res.kind === 'auth') {
       // The saved login is no longer valid, so the screen will ask the user to log in again.
       await forgetUser();
@@ -58,6 +81,10 @@ export default function ReportForm({ draft, onSubmitted }: Props) {
   }
 
   const failureText = failure === 'network' ? NETWORK_ERROR : SERVER_ERROR;
+  const direct = reportType === 'PHONE' && reviewMode === 'DIRECT';
+  const consentText = direct
+    ? 'I understand that this report will be stored and the number will be flagged for everyone straight away.'
+    : 'I understand that this report will be stored and reviewed by a moderator.';
 
   return (
     <View>
@@ -86,10 +113,35 @@ export default function ReportForm({ draft, onSubmitted }: Props) {
         style={styles.details}
       />
 
+      {reportType === 'PHONE' ? (
+        <View accessibilityRole="radiogroup" accessibilityLabel="How should this number be reported?" style={styles.modes}>
+          <AppText variant="bodyStrong" style={styles.label}>How should this number be reported?</AppText>
+          {REVIEW_OPTIONS.map((option) => {
+            const selected = option.value === reviewMode;
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="radio"
+                aria-checked={selected}
+                accessibilityLabel={option.title}
+                onPress={() => setReviewMode(option.value)}
+                style={[styles.mode, { borderColor: selected ? colors.primary : colors.border, backgroundColor: colors.surface }]}
+              >
+                <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={22} color={selected ? colors.primary : colors.textMuted} />
+                <View style={styles.modeText}>
+                  <AppText variant="cardTitle">{option.title}</AppText>
+                  <AppText variant="small" muted>{option.detail}</AppText>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+
       <Pressable
         accessibilityRole="checkbox"
         aria-checked={understood}
-        accessibilityLabel="I understand that this report will be stored and reviewed by a moderator."
+        accessibilityLabel={consentText}
         onPress={() => setUnderstood(!understood)}
         style={styles.checkRow}
       >
@@ -102,7 +154,7 @@ export default function ReportForm({ draft, onSubmitted }: Props) {
         >
           {understood ? <Ionicons name="checkmark" size={16} color={colors.onPrimary} /> : null}
         </View>
-        <AppText style={styles.checkText}>I understand that this report will be stored and reviewed by a moderator.</AppText>
+        <AppText style={styles.checkText}>{consentText}</AppText>
       </Pressable>
       {errors.understood ? (
         <AppText variant="small" color={colors.status.high.text} accessibilityRole="alert" style={styles.checkError}>
@@ -120,6 +172,9 @@ const styles = StyleSheet.create({
   label: { marginBottom: spacing.sm, fontSize: 15 },
   gap: { height: spacing.xl },
   details: { minHeight: 100 },
+  modes: { marginTop: spacing.lg, gap: spacing.sm },
+  mode: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', padding: spacing.md, borderWidth: 1.5, borderRadius: radius.md },
+  modeText: { flex: 1, gap: 2 },
   checkRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', paddingVertical: spacing.sm },
   box: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
   checkText: { flex: 1 },

@@ -36,8 +36,35 @@ describe('ReportForm', () => {
     expect(checkbox).toBeChecked();
     await user.press(screen.getByRole('button', { name: 'Submit Report' }));
 
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ report_type: 'URL', content: 'http://bad.example', details: 'From SMS' });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ report_type: 'URL', content: 'http://bad.example', details: 'From SMS', review_mode: 'MODERATED' });
     expect(onSubmitted).toHaveBeenCalledWith(report);
+  });
+
+  test('a phone number can be reported directly, which flags it for everyone at once', async () => {
+    const user = userEvent.setup();
+    const report = { id: 8, report_type: 'PHONE', content: '0788555666', details: '', review_mode: 'DIRECT', status: 'APPROVED' };
+    const fetchMock = mockFetch({ status: 201, body: report });
+    const onSubmitted = jest.fn();
+    await render(<ReportForm draft={{ type: 'PHONE', content: '0788555666' }} onSubmitted={onSubmitted} />, {
+      wrapper: AppProviders,
+    });
+
+    // Verification is the default; the direct option says clearly what it does.
+    expect(screen.getByRole('radio', { name: 'Send for verification' })).toBeChecked();
+    await user.press(screen.getByRole('radio', { name: 'Direct report' }));
+    await user.press(screen.getByRole('checkbox'));
+    expect(screen.getByText(/flagged for everyone straight away/)).toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Submit Report' }));
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).review_mode).toBe('DIRECT');
+    expect(onSubmitted).toHaveBeenCalledWith(report);
+  });
+
+  test('messages and links have no direct option', async () => {
+    await render(<ReportForm draft={{ type: 'MESSAGE', content: 'Send your PIN' }} onSubmitted={jest.fn()} />, {
+      wrapper: AppProviders,
+    });
+    expect(screen.queryByRole('radio', { name: 'Direct report' })).toBeNull();
   });
 });
 

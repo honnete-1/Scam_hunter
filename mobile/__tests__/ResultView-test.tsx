@@ -118,3 +118,23 @@ test('shows no score when the AI did not run', async () => {
   await renderResult({ ...CAUTION_RESULT, ai_score: null });
   expect(screen.queryByText('AI scam-likelihood score')).not.toBeOnTheScreen();
 });
+
+test('a message in Kinyarwanda is explained in Kinyarwanda, with English one tap away', async () => {
+  const user = userEvent.setup();
+  await renderResult({
+    ...CAUTION_RESULT,
+    headline: 'Witondere: hari ibimenyetso by\'uburiganya',
+    explanation: 'Ubu butumwa burasaba amafaranga.',
+    safer_action: 'Ntiwohereze amafaranga.',
+    language: 'rw',
+    english: { headline: 'Be careful: warning signs found', explanation: 'This message asks for money.', safer_action: 'Do not send money.' },
+  });
+
+  expect(screen.getByText('In Kinyarwanda, the language of the message')).toBeOnTheScreen();
+  expect(screen.getByText('Ubu butumwa burasaba amafaranga.')).toBeOnTheScreen();
+  expect(screen.getByText('Ntiwohereze amafaranga.')).toBeOnTheScreen();
+
+  await user.press(screen.getByRole('button', { name: 'Show in English' }));
+  expect(screen.getByText('This message asks for money.')).toBeOnTheScreen();
+  expect(screen.getByText('Do not send money.')).toBeOnTheScreen();
+});

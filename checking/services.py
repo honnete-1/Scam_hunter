@@ -6,6 +6,7 @@ from .reference_repository import LookupStatus, ReferenceRepository
 from .requests import MessageCheck, PhoneCheck, URLCheck, extract_domain
 from .rule_engine import RuleEngine, make_indicator
 from .threat_intel import extract_links, run_link_checks
+from .translator import Translator
 
 
 def check_entry(check_id, label, status, detail="", finding=False):
@@ -55,11 +56,12 @@ def online_indicators(url, link_checks):
 
 # Coordinates a check: validate -> rules -> reference lookup -> optional online checks -> result.
 class AnalysisService:
-    def __init__(self, rule_engine=None, repository=None, ai_analyzer=None, link_checker=None):
+    def __init__(self, rule_engine=None, repository=None, ai_analyzer=None, link_checker=None, translator=None):
         self.rule_engine = rule_engine or RuleEngine()
         self.repository = repository or ReferenceRepository()
         self.ai_analyzer = ai_analyzer or AIAnalyzer()
         self.link_checker = link_checker or run_link_checks
+        self.translator = translator or Translator()
 
     def analyze(self, check_request):
         # Validation always happens first. Invalid input raises
@@ -79,7 +81,28 @@ class AnalysisService:
         result.determine_concern_level()
         result.generate_explanation()
         result.generate_safer_action()
+        result.generate_headline()
+        if result.language and result.language != "en":
+            self._translate(result)
         return result
+
+    def _translate(self, result):
+        # Answer in the scam message's language. If translation fails, the English text stays.
+        texts = {"headline": result.headline, "explanation": result.explanation, "safer_action": result.safer_action}
+        for number, indicator in enumerate(result.warning_indicators):
+            texts[f"indicator_{number}"] = indicator["explanation"]
+        translated = self.translator.translate(texts, result.language)
+        if translated is None:
+            return
+
+        result.english = {"headline": result.headline, "explanation": result.explanation, "safer_action": result.safer_action}
+        result.headline = translated["headline"]
+        result.explanation = translated["explanation"]
+        result.safer_action = translated["safer_action"]
+        result.warning_indicators = [
+            {**indicator, "explanation": translated[f"indicator_{number}"]}
+            for number, indicator in enumerate(result.warning_indicators)
+        ]
 
     def _analyze_message(self, check_request):
         message = check_request.normalized
@@ -143,6 +166,7 @@ class AnalysisService:
             lookup_completed=lookup_completed,
             checks=checks,
             ai_score=ai.scam_score,
+            language=ai.language or None,
         )
 
     def _analyze_url(self, check_request):

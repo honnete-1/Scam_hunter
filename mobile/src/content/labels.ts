@@ -63,6 +63,16 @@ export const SERVER_ERROR = {
   detail: 'Please try again in a moment.',
 };
 
+// Languages the backend may detect in a message (ISO 639-1 codes).
+export const languageNames: Record<string, string> = {
+  en: 'English', rw: 'Kinyarwanda', fr: 'French', sw: 'Swahili', rn: 'Kirundi', lg: 'Luganda', ln: 'Lingala',
+  es: 'Spanish', pt: 'Portuguese', ar: 'Arabic', de: 'German', zh: 'Chinese', hi: 'Hindi',
+};
+
+export function languageName(code: string | null | undefined) {
+  return code ? languageNames[code] ?? code.toUpperCase() : '';
+}
+
 export const SAFETY_TIPS = [
   'Real support teams will never ask you to share your OTP or PIN.',
   'If a message rushes you, slow down. Call the organisation on a number you already know.',

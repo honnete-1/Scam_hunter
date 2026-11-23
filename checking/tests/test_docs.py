@@ -13,7 +13,7 @@ class APIDocumentationTests(TestCase):
     def test_schema_documents_every_endpoint_with_a_tag_and_summary(self):
         schema = self.client.get("/api/schema/", HTTP_ACCEPT="application/json").json()
         self.assertEqual(schema["info"]["title"], "Scam Hunter API")
-        self.assertEqual({tag["name"] for tag in schema["tags"]}, {"Checks", "Community reports", "Moderation", "Accounts"})
+        self.assertEqual({tag["name"] for tag in schema["tags"]}, {"Checks", "Community reports", "Moderation", "Accounts", "App"})
         for path, operations in schema["paths"].items():
             for method, operation in operations.items():
                 with self.subTest(path=path, method=method):

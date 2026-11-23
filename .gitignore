@@ -12,3 +12,4 @@ frontend/dist/
 
 # Machine-specific settings (local IP addresses, links)
 .env.local
+android_release.json

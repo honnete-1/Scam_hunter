@@ -50,6 +50,16 @@ export const evaluationResults = {
 };
 
 // Mobile app links. Set them in frontend/.env.local (see README); a link is only shown once it is set.
+// Languages the backend may detect in a scam message (ISO 639-1 codes).
+export const languageNames = {
+  en: "English", rw: "Kinyarwanda", fr: "French", sw: "Swahili", rn: "Kirundi", lg: "Luganda", ln: "Lingala",
+  es: "Spanish", pt: "Portuguese", ar: "Arabic", de: "German", zh: "Chinese", hi: "Hindi",
+};
+
+export function languageName(code) {
+  return code ? languageNames[code] || code.toUpperCase() : "";
+}
+
 export const mobileApp = {
   apkUrl: import.meta.env.VITE_ANDROID_APK_URL || "",
   expoGoUrl: import.meta.env.VITE_EXPO_GO_URL || "",

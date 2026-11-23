@@ -182,9 +182,13 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Community reports', 'description': 'Submit reports, list your own, and read the public alerts feed and statistics.'},
         {'name': 'Moderation', 'description': 'Staff only. Approve or reject pending reports. Approved links and numbers become reference records.'},
         {'name': 'Accounts', 'description': 'Sign up, log in to get a token, log out and read your profile.'},
+        {'name': 'App', 'description': 'The newest Android app build, for the download button and QR code.'},
     ],
     # The documentation pages load their scripts from this server, so they work offline too.
     'SWAGGER_UI_DIST': 'SIDECAR',
     'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
     'REDOC_DIST': 'SIDECAR',
 }
+
+# Where publish_android_build saves the newest APK link (machine-specific, so not in git).
+ANDROID_RELEASE_FILE = Path(os.environ.get('SCAM_HUNTER_ANDROID_RELEASE_FILE', BASE_DIR / 'android_release.json'))

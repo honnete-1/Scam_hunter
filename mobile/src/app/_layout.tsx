@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import LockScreen from '../components/LockScreen';
+import ProtectionBridge from '../components/ProtectionBridge';
 import { AppLockProvider, useAppLock } from '../context/AppLockContext';
 import { AuthProvider } from '../context/AuthContext';
 import { CheckSessionProvider } from '../context/CheckSessionContext';
@@ -34,10 +35,12 @@ function AppStack() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="result" options={{ title: 'Check Result' }} />
         <Stack.Screen name="scan" options={{ title: 'Scan QR Code' }} />
+        <Stack.Screen name="protection" options={{ title: 'Real-time Protection' }} />
         <Stack.Screen name="report" options={{ title: 'Report' }} />
         <Stack.Screen name="login" options={{ title: 'Log In' }} />
         <Stack.Screen name="signup" options={{ title: 'Sign Up' }} />
       </Stack>
+      <ProtectionBridge />
       {locked ? <LockScreen /> : null}
     </>
   );

@@ -9,11 +9,16 @@ function Confirmation({ report }) {
   const headingRef = useRef(null);
   useEffect(() => headingRef.current?.focus(), []);
 
-  // Moderation hasn't happened yet, so this must not sound like the content was confirmed.
+  // A moderated report hasn't been reviewed yet, so it must not sound like the content was confirmed.
+  const direct = report.review_mode === "DIRECT" && report.status === "APPROVED";
   return (
     <div className="card" role="status">
       <h2 ref={headingRef} tabIndex={-1} className="section-title">Report Submitted</h2>
-      <p>Your report has been sent for review.</p>
+      <p>
+        {direct
+          ? "The number was added to the scam list. Checks, calls and SMS from it are now flagged for everyone."
+          : "Your report has been sent for review."}
+      </p>
       <p className="confirmation__status">
         Status: <span className="report-status">{STATUS_LABELS[report.status] || report.status}</span>
       </p>

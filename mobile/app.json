@@ -2,7 +2,7 @@
   "expo": {
     "name": "Scam Hunter",
     "slug": "scam-hunter",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "scheme": "scamhunter",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,15 +26,27 @@
       ],
       "blockedPermissions": [
         "android.permission.READ_SMS",
-        "android.permission.RECEIVE_SMS",
         "android.permission.SEND_SMS",
         "android.permission.RECEIVE_MMS",
-        "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.RECORD_AUDIO"
       ],
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "SEND",
+          "category": [
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "mimeType": "text/plain"
+            }
+          ]
+        }
+      ],
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/favicon.png"

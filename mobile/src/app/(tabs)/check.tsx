@@ -11,7 +11,7 @@ import type { CheckType } from '../../types/api';
 const TYPES: CheckType[] = ['MESSAGE', 'URL', 'PHONE'];
 
 export default function CheckScreen() {
-  const params = useLocalSearchParams<{ type?: string }>();
+  const params = useLocalSearchParams<{ type?: string; content?: string }>();
   const initialType = TYPES.includes(params.type as CheckType) ? (params.type as CheckType) : 'MESSAGE';
   const { setLastCheck } = useCheckSession();
 
@@ -21,8 +21,9 @@ export default function CheckScreen() {
       <SecondaryButton label="Scan a QR Code" onPress={() => router.push('/scan')} style={styles.scan} />
       {/* key: coming from Home with a different type starts the form on that type. */}
       <CheckForm
-        key={initialType}
+        key={initialType + (params.content ?? '')}
         initialType={initialType}
+        initialContent={params.content}
         onResult={(type, content, result) => {
           // Kept in memory only, for the result screen and an optional report.
           setLastCheck({ type, content, result });

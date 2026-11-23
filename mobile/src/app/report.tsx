@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import AppText from '../components/AppText';
 import { PrimaryButton, SecondaryButton, TextButton } from '../components/Buttons';
 import ReportForm from '../components/ReportForm';
@@ -11,17 +11,24 @@ import { useAuth } from '../context/AuthContext';
 import { useCheckSession } from '../context/CheckSessionContext';
 import { useTheme } from '../context/ThemeContext';
 import { spacing } from '../theme/spacing';
-import type { CommunityReport } from '../types/api';
+import type { CheckType, CommunityReport } from '../types/api';
+
+const TYPES: CheckType[] = ['MESSAGE', 'URL', 'PHONE'];
 
 function Confirmation({ report }: { report: CommunityReport }) {
+  const direct = report.review_mode === 'DIRECT' && report.status === 'APPROVED';
   // Moderation hasn't happened yet, so nothing here may sound like the content was confirmed.
   return (
     <View accessibilityLiveRegion="polite">
       <AppText variant="title" accessibilityRole="header">Report Submitted</AppText>
-      <AppText muted style={styles.gapSmall}>Your report has been sent for review.</AppText>
+      <AppText muted style={styles.gapSmall}>
+        {direct
+          ? 'The number was added to the scam list. Calls and SMS from it are now flagged for everyone using Scam Hunter.'
+          : 'Your report has been sent for review.'}
+      </AppText>
       <View style={styles.statusRow}>
         <AppText variant="bodyStrong">Status:</AppText>
-        <StatusBadge label={reportStatusLabels[report.status] ?? report.status} tone="unavailable" />
+        <StatusBadge label={reportStatusLabels[report.status] ?? report.status} tone={direct ? 'high' : 'unavailable'} />
       </View>
       <View style={styles.buttons}>
         <PrimaryButton label="View My Reports" onPress={() => router.navigate('/reports')} />
@@ -36,6 +43,11 @@ export default function ReportScreen() {
   const { user, loading } = useAuth();
   const { reportDraft, setReportDraft } = useCheckSession();
   const [submitted, setSubmitted] = useState<CommunityReport | null>(null);
+  // "Report number" on a scam warning notification opens this screen with the number filled in.
+  const params = useLocalSearchParams<{ type?: string; content?: string }>();
+  const linkDraft = TYPES.includes(params.type as CheckType) && params.content
+    ? { type: params.type as CheckType, content: params.content }
+    : null;
 
   let body;
   if (loading) {
@@ -59,7 +71,7 @@ export default function ReportScreen() {
   } else {
     body = (
       <ReportForm
-        draft={reportDraft}
+        draft={reportDraft ?? linkDraft}
         onSubmitted={(report) => {
           setReportDraft(null);
           setSubmitted(report);

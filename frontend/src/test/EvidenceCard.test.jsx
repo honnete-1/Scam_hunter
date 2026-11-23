@@ -129,4 +129,28 @@ describe("AI score", () => {
     renderCard({ ...CAUTION_RESULT, ai_score: null });
     expect(screen.queryByRole("meter")).not.toBeInTheDocument();
   });
+
+  it("explains a Kinyarwanda message in Kinyarwanda, with English one click away", async () => {
+    renderCard({
+      ...CAUTION_RESULT,
+      headline: "Witondere: hari ibimenyetso by'uburiganya",
+      explanation: "Ubu butumwa burasaba amafaranga.",
+      safer_action: "Ntiwohereze amafaranga.",
+      language: "rw",
+      english: {
+        headline: "Be careful: warning signs found",
+        explanation: "This message asks for money.",
+        safer_action: "Do not send money.",
+      },
+    });
+
+    expect(screen.getByText("In Kinyarwanda, the language of the message")).toBeInTheDocument();
+    expect(screen.getByText("Ubu butumwa burasaba amafaranga.")).toBeInTheDocument();
+    expect(screen.getByText("Ntiwohereze amafaranga.")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Show in English" }));
+    expect(screen.getByText("This message asks for money.")).toBeInTheDocument();
+    expect(screen.getByText("Do not send money.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show in Kinyarwanda" })).toBeInTheDocument();
+  });
 });

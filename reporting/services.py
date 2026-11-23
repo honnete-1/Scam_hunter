@@ -1,29 +1,61 @@
 # Moderation workflow: submit -> PENDING -> moderator reviews -> APPROVED or REJECTED.
 # Only approve_report() creates reference records, so only APPROVED reports affect matching.
 
+from datetime import timedelta
+
 from django.db import transaction
 from django.utils import timezone
 
 from checking.ai_analyzer import redact
+from checking.reference_repository import approved_only
 from checking.models import PhoneReferenceRecord, ReferenceSource, URLReferenceRecord
-from checking.requests import extract_domain, normalize_phone_number, normalize_url
+from checking.requests import CheckValidationError, extract_domain, normalize_phone_number, normalize_url
 
-from .models import CommunityReport, ModerationDecision, ModerationReview, ReportStatus, ReportType
+from .models import CommunityReport, ModerationDecision, ModerationReview, ReportStatus, ReportType, ReviewMode
 
 
 class ModerationError(Exception):
     pass
 
 
-def submit_report(user, report_type, content, details=""):
-    # New reports always start as PENDING. They do nothing until a moderator approves them.
-    return CommunityReport.objects.create(
+# Direct reports skip the moderator, so each account may only make a few per day.
+MAX_DIRECT_REPORTS_PER_DAY = 5
+DIRECT_REPORT_REASON = "Direct report: approved automatically when it was submitted."
+
+
+@transaction.atomic
+def submit_report(user, report_type, content, details="", review_mode=ReviewMode.MODERATED):
+    # New reports start as PENDING and do nothing until approved. A direct phone report is
+    # approved straight away through the same approve_report() as a moderator would use.
+    report = CommunityReport.objects.create(
         submitted_by=user,
         report_type=report_type,
         content=content.strip(),
         details=details.strip(),
         status=ReportStatus.PENDING,
+        review_mode=review_mode,
     )
+    if review_mode == ReviewMode.DIRECT:
+        if report_type != ReportType.PHONE:
+            raise ModerationError("Only phone numbers can be reported directly.")
+        report = approve_report(report, None, DIRECT_REPORT_REASON)
+    return report
+
+
+def direct_reports_today(user):
+    since = timezone.now() - timedelta(days=1)
+    return CommunityReport.objects.filter(submitted_by=user, review_mode=ReviewMode.DIRECT, created_at__gte=since).count()
+
+
+def remove_from_scam_list(report):
+    # Lets a moderator undo a wrong report (e.g. a direct one) without deleting any history.
+    if report.report_type == ReportType.PHONE:
+        records = PhoneReferenceRecord.objects.filter(phone_number=normalize_phone_number(report.content))
+    elif report.report_type == ReportType.URL:
+        records = URLReferenceRecord.objects.filter(url=normalize_url(report.content))
+    else:
+        return 0
+    return records.update(active=False)
 
 
 @transaction.atomic
@@ -143,3 +175,26 @@ def community_stats():
         "suspicious_links": URLReferenceRecord.objects.filter(active=True).count(),
         "suspicious_numbers": PhoneReferenceRecord.objects.filter(active=True).count(),
     }
+
+
+MAX_SCAM_NUMBERS = 5000
+
+
+def scam_number_list():
+    # Approved scam numbers for the phone app. It keeps a copy so incoming calls and SMS
+    # can be checked instantly, even before the network answers.
+    counts = {}
+    phone_reports = CommunityReport.objects.filter(report_type=ReportType.PHONE, status=ReportStatus.APPROVED)
+    for content in phone_reports.values_list("content", flat=True):
+        try:
+            number = normalize_phone_number(content)
+        except CheckValidationError:
+            continue
+        counts[number] = counts.get(number, 0) + 1
+
+    records = approved_only(PhoneReferenceRecord.objects).order_by("-approved_at")[:MAX_SCAM_NUMBERS]
+    numbers = [
+        {"phone_number": record.phone_number, "reports": counts.get(record.phone_number, 0)}
+        for record in records
+    ]
+    return {"generated_at": timezone.now(), "count": len(numbers), "numbers": numbers}

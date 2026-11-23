@@ -42,7 +42,7 @@ describe("Community reporting", () => {
 
     const [url, options] = fetchMock.mock.calls[1];
     expect(url).toBe("/api/reports/");
-    expect(JSON.parse(options.body)).toEqual({ report_type: "URL", content: "http://bad.example", details: "From SMS" });
+    expect(JSON.parse(options.body)).toEqual({ report_type: "URL", content: "http://bad.example", details: "From SMS", review_mode: "MODERATED" });
   });
 });
 
@@ -80,5 +80,26 @@ describe("Authentication", () => {
 
     await waitFor(() => expect(localStorage.getItem("scamHunterToken")).toBeNull());
     expect(screen.getByTestId("location")).toHaveTextContent(/^\/$/);
+  });
+
+  it("lets a phone number be reported directly, which flags it at once", async () => {
+    saveToken("token-1");
+    const fetchMock = mockFetch(
+      { status: 200, body: USER },
+      {
+        status: 201,
+        body: { id: 8, report_type: "PHONE", content: "0788555666", details: "", review_mode: "DIRECT", status: "APPROVED" },
+      }
+    );
+    renderApp("/report");
+
+    await userEvent.click(await screen.findByLabelText("Phone"));
+    await userEvent.type(screen.getByLabelText("Content"), "0788555666");
+    await userEvent.click(screen.getByLabelText(/Direct report/));
+    await userEvent.click(screen.getByLabelText(/flagged for everyone straight away/));
+    await userEvent.click(screen.getByRole("button", { name: "Submit Report" }));
+
+    expect(await screen.findByText(/The number was added to the scam list/)).toBeInTheDocument();
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).review_mode).toBe("DIRECT");
   });
 });

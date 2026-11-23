@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Pressable, Share, StyleSheet, View } from 'react-native';
-import { UNAVAILABLE_LABEL, checkStatusText, concernLabels, labelForIndicator, subjectNames } from '../content/labels';
+import { UNAVAILABLE_LABEL, checkStatusText, concernLabels, labelForIndicator, languageName, subjectNames } from '../content/labels';
 import { useTheme } from '../context/ThemeContext';
 import type { StatusTone } from '../theme/colors';
 import { minTouch, radius, spacing } from '../theme/spacing';
@@ -178,6 +178,8 @@ Check before you act.`;
 export default function ResultView({ result, checkType, retrying, onReport, onCheckAnother, onTryAgain }: Props) {
   const { colors } = useTheme();
   const [showDetails, setShowDetails] = useState(false);
+  // Results for messages in another language come translated into it; this switches back to English.
+  const [inEnglish, setInEnglish] = useState(false);
   const reveal = useReveal();
   const subject = subjectNames[checkType];
   const indicators = distinctIndicators(result.indicators);
@@ -232,6 +234,9 @@ export default function ResultView({ result, checkType, retrying, onReport, onCh
   }
 
   const hasFindings = indicators.length > 0 || result.reference_match;
+  const english = inEnglish ? result.english : null;
+  const explanation = english ? english.explanation : result.explanation;
+  const saferAction = english ? english.safer_action : result.safer_action;
 
   return (
     <Animated.View style={reveal}>
@@ -239,6 +244,23 @@ export default function ResultView({ result, checkType, retrying, onReport, onCh
       <AppText variant="title" style={styles.summary} accessibilityRole="header">{summary}</AppText>
       {detail ? <AppText muted>{detail}</AppText> : null}
       <Reputation reputation={result.reputation} />
+      {result.english ? (
+        <View
+          accessibilityLiveRegion="polite"
+          style={[styles.language, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
+        >
+          <AppText variant="label" muted>
+            {inEnglish ? 'In English' : `In ${languageName(result.language)}, the language of the message`}
+          </AppText>
+          <AppText variant="cardTitle">{english ? english.headline : result.headline}</AppText>
+          <AppText>{explanation}</AppText>
+          <TextButton
+            label={inEnglish ? `Show in ${languageName(result.language)}` : 'Show in English'}
+            onPress={() => setInEnglish(!inEnglish)}
+            style={styles.languageButton}
+          />
+        </View>
+      ) : null}
       <AIScore score={result.ai_score} />
 
       {hasFindings ? (
@@ -263,13 +285,13 @@ export default function ResultView({ result, checkType, retrying, onReport, onCh
       ) : null}
 
       <View style={styles.section}>
-        <SaferActionCard text={result.safer_action} />
+        <SaferActionCard text={saferAction} />
       </View>
 
       <ChecksPerformed checks={result.checks} />
 
-      {showDetails && result.explanation ? (
-        <AppText variant="small" muted style={styles.explanation}>{result.explanation}</AppText>
+      {showDetails && explanation && !result.english ? (
+        <AppText variant="small" muted style={styles.explanation}>{explanation}</AppText>
       ) : null}
 
       <View style={styles.actions}>
@@ -281,7 +303,7 @@ export default function ResultView({ result, checkType, retrying, onReport, onCh
         ) : (
           <>
             <SecondaryButton label="Report This" onPress={onReport} />
-            <SecondaryButton label="Share Warning" onPress={() => shareWarning(level.label, summary, result.safer_action, subject)} />
+            <SecondaryButton label="Share Warning" onPress={() => shareWarning(level.label, summary, saferAction, subject)} />
             <TextButton label="Check Another" onPress={onCheckAnother} />
           </>
         )}
@@ -301,6 +323,8 @@ const styles = StyleSheet.create({
   toggle: { minHeight: minTouch, justifyContent: 'center' },
   safer: { borderRadius: radius.md, borderLeftWidth: 4, padding: spacing.lg, gap: spacing.xs },
   explanation: { marginTop: spacing.md },
+  language: { marginTop: spacing.lg, padding: spacing.lg, borderRadius: radius.md, borderWidth: 1, gap: spacing.xs },
+  languageButton: { alignSelf: 'flex-start' },
   actions: { marginTop: spacing.xxl, gap: spacing.sm },
   flex: { flex: 1 },
   score: { marginTop: spacing.lg, padding: spacing.lg, borderRadius: radius.md, borderWidth: 1, gap: spacing.sm },

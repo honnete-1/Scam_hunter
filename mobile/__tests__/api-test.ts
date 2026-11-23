@@ -50,5 +50,6 @@ test('submitReport uses the backend report fields', async () => {
     report_type: 'URL',
     content: 'http://bad.example',
     details: 'From SMS',
+    review_mode: 'MODERATED',
   });
 });

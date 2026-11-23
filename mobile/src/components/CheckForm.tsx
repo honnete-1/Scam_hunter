@@ -51,13 +51,15 @@ export function quickValidate(type: CheckType, value: string): string {
 
 type Props = {
   initialType?: CheckType;
+  // Text shared from another app that could not be checked straight away.
+  initialContent?: string;
   onResult: (type: CheckType, content: string, result: AnalysisResult) => void;
 };
 
-export default function CheckForm({ initialType = 'MESSAGE', onResult }: Props) {
+export default function CheckForm({ initialType = 'MESSAGE', initialContent = '', onResult }: Props) {
   const [type, setType] = useState<CheckType>(initialType);
   // Each type keeps its own text so switching back and forth doesn't lose it.
-  const [values, setValues] = useState<Record<CheckType, string>>({ MESSAGE: '', URL: '', PHONE: '' });
+  const [values, setValues] = useState<Record<CheckType, string>>(() => ({ MESSAGE: '', URL: '', PHONE: '', [initialType]: initialContent }));
   const [fieldError, setFieldError] = useState('');
   const [failure, setFailure] = useState<'network' | 'server' | null>(null);
   const [loading, setLoading] = useState(false);

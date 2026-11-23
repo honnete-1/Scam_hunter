@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { indicatorLabels, subjectNames } from "../content";
+import { indicatorLabels, languageName, subjectNames } from "../content";
 
 const LEVELS = {
   HIGH_CONCERN: { label: "High concern", tone: "high" },
@@ -145,6 +145,8 @@ function Reputation({ reputation }) {
 
 export default function EvidenceCard({ result, checkType, onReport, onCheckAnother, onTryAgain, ref }) {
   const headingId = useId();
+  // Results for messages in another language come translated into it; this switches back to English.
+  const [inEnglish, setInEnglish] = useState(false);
   const subject = subjectNames[checkType] || "content";
   const indicators = distinctIndicators(result.indicators);
 
@@ -179,6 +181,8 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
 
   const level = LEVELS[result.concern_level];
   const isClear = result.concern_level === "NO_KNOWN_WARNING_SIGNS";
+  const english = inEnglish ? result.english : null;
+  const saferAction = english ? english.safer_action : result.safer_action;
 
   let summary = "No configured warning indicators or approved suspicious record matches were found.";
   let detail = "This does not mean it is guaranteed to be safe.";
@@ -203,6 +207,18 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
       <h3 id={headingId} className="evidence__summary">{summary}</h3>
       {detail && <p className="muted">{detail}</p>}
       <Reputation reputation={result.reputation} />
+      {result.english && (
+        <div className="translated" lang={inEnglish ? "en" : result.language || undefined} aria-live="polite">
+          <p className="translated__label">
+            {inEnglish ? "In English" : `In ${languageName(result.language)}, the language of the message`}
+          </p>
+          <p className="translated__headline">{english ? english.headline : result.headline}</p>
+          <p>{english ? english.explanation : result.explanation}</p>
+          <button type="button" className="link-button" onClick={() => setInEnglish(!inEnglish)}>
+            {inEnglish ? `Show in ${languageName(result.language)}` : "Show in English"}
+          </button>
+        </div>
+      )}
       <AIScore score={result.ai_score} />
 
       {(indicators.length > 0 || result.reference_match) && (
@@ -212,7 +228,7 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
         </div>
       )}
 
-      <SaferAction text={result.safer_action} />
+      <SaferAction text={saferAction} />
       <ChecksPerformed checks={result.checks} />
 
       <div className="evidence__actions">

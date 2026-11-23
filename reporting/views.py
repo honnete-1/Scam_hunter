@@ -5,12 +5,13 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import CommunityReport
+from .models import CommunityReport, ReviewMode
 from .serializers import (
     CommunityReportSerializer, CommunityStatsSerializer, DetailSerializer, ModerationInputSerializer, PublicAlertSerializer,
+    ScamNumberListSerializer,
 )
 from .services import (
-    ModerationError, approve_report, community_stats, public_alerts, reject_report, submit_report,
+    ModerationError, approve_report, community_stats, public_alerts, reject_report, scam_number_list, submit_report,
 )
 
 
@@ -26,13 +27,22 @@ from .services import (
         summary="Submit a report",
         description=(
             "Deliberately reports suspicious content. It is stored with status PENDING and affects nothing until a "
-            "moderator approves it. The content is validated like a check of the same type."
+            "moderator approves it. The content is validated like a check of the same type. Phone numbers can instead "
+            "be reported with review_mode DIRECT: the report is approved immediately (status APPROVED) and the number "
+            "joins the scam number list; moderators can still remove it later."
         ),
-        examples=[OpenApiExample(
-            "Report a phone number",
-            value={"report_type": "PHONE", "content": "+250 788 444 999", "details": "Called claiming to be MTN and asked for my PIN."},
-            request_only=True,
-        )],
+        examples=[
+            OpenApiExample(
+                "Report a phone number for verification",
+                value={"report_type": "PHONE", "content": "+250 788 444 999", "details": "Called claiming to be MTN and asked for my PIN."},
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Direct report (approved at once)",
+                value={"report_type": "PHONE", "content": "0788 444 999", "review_mode": "DIRECT"},
+                request_only=True,
+            ),
+        ],
         responses={
             201: CommunityReportSerializer,
             400: OpenApiResponse(description="Invalid type or content, e.g. {\"content\": [\"Enter a valid URL...\"]}."),
@@ -51,7 +61,8 @@ class CommunityReportListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         data = serializer.validated_data
         serializer.instance = submit_report(
-            self.request.user, data["report_type"], data["content"], data.get("details", "")
+            self.request.user, data["report_type"], data["content"], data.get("details", ""),
+            data.get("review_mode", ReviewMode.MODERATED),
         )
 
 
@@ -130,3 +141,20 @@ class CommunityStatsView(APIView):
 
     def get(self, request):
         return Response(community_stats())
+
+
+@extend_schema(
+    tags=["Community reports"],
+    summary="Scam number list",
+    description=(
+        "Every active, moderator-approved scam phone number. The Android app downloads this list so it can "
+        "warn about an incoming call or SMS instantly, even before a network check finishes."
+    ),
+    auth=[],
+    responses={200: ScamNumberListSerializer},
+)
+class ScamNumberListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response(scam_number_list())

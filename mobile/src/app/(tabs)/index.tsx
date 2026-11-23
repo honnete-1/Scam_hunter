@@ -6,6 +6,7 @@ import AppText from '../../components/AppText';
 import { PrimaryButton, TextButton } from '../../components/Buttons';
 import CheckTypeSelector from '../../components/CheckTypeSelector';
 import MessageVisual from '../../components/MessageVisual';
+import ProtectionCard from '../../components/ProtectionCard';
 import Screen from '../../components/Screen';
 import { SAFETY_TIPS } from '../../content/labels';
 import { useTheme } from '../../context/ThemeContext';
@@ -48,6 +49,8 @@ export default function HomeScreen() {
         <MessageVisual />
       </View>
 
+      <ProtectionCard />
+
       <AppText variant="section" style={styles.question}>What do you want to check?</AppText>
       <CheckTypeSelector value={type} onChange={setType} compact />
       <PrimaryButton
@@ -70,7 +73,7 @@ const styles = StyleSheet.create({
   avatar: { width: minTouch - 6, height: minTouch - 6, borderRadius: 21, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   greeting: { marginBottom: spacing.xs },
   visual: { marginTop: spacing.xl, marginBottom: spacing.xl },
-  question: { marginBottom: spacing.md },
+  question: { marginTop: spacing.xl, marginBottom: spacing.md },
   cta: { marginTop: spacing.lg },
   scan: { alignSelf: 'center' },
   tip: { marginTop: spacing.xxl, paddingTop: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, gap: spacing.xs },

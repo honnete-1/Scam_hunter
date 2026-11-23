@@ -1871,3 +1871,52 @@ section[id] {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Result explained in the message's language ---------- */
+.translated {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--blue-tint);
+  color: var(--text);
+}
+.translated p { margin: 0 0 6px; }
+.translated__label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.translated__headline { font-weight: 700; font-size: 1.05rem; }
+.link-button {
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  min-height: 44px;
+  color: var(--link);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- Direct report or verification ---------- */
+.choice-list { display: grid; gap: 10px; margin-top: 8px; }
+.choice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.choice:has(input:checked) { border-color: var(--blue); }
+.choice input { margin-top: 4px; accent-color: var(--blue); width: 18px; height: 18px; flex: none; }
+.choice > span { display: grid; gap: 2px; }
+
+/* QR on the home page app section (dark background, so the white tile stands out). */
+.qr--home {
+  display: flex;
+  width: fit-content;
+  margin-top: 24px;
+}
+.qr--home figcaption { max-width: 150px; text-align: center; }
+.mobile-get .qr { margin: 8px 0 16px; }

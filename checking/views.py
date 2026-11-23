@@ -44,6 +44,9 @@ EXAMPLE_HIGH = {
     ],
     "reputation": None,
     "ai_score": 95,
+    "headline": "Warning: this looks like a scam",
+    "language": "en",
+    "english": None,
 }
 
 EXAMPLE_UNAVAILABLE = {
@@ -56,6 +59,9 @@ EXAMPLE_UNAVAILABLE = {
     "checks": [{"id": "reference", "label": "Approved suspicious numbers", "status": "UNAVAILABLE", "finding": False, "detail": ""}],
     "reputation": None,
     "ai_score": None,
+    "headline": "The check could not be completed",
+    "language": None,
+    "english": None,
 }
 
 

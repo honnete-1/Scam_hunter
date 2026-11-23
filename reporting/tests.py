@@ -187,3 +187,84 @@ class AdminTests(TestCase):
         self.assertEqual(report.status, ReportStatus.APPROVED)
         self.assertEqual(URLReferenceRecord.objects.get().source_report, report)
         self.assertEqual(self.client.get(f"/admin/reporting/communityreport/{report.pk}/change/").status_code, 200)
+
+
+class ScamNumberListTests(APITestCase):
+    # The Android app downloads this list to warn about calls and SMS instantly.
+    def setUp(self):
+        self.user = User.objects.create_user("reporter", password="pass12345")
+        self.moderator = User.objects.create_user("moderator", password="pass12345", is_staff=True)
+
+    def test_only_approved_numbers_are_listed_with_report_counts(self):
+        first = submit_report(self.user, ReportType.PHONE, "0788 444 999")
+        second = submit_report(self.user, ReportType.PHONE, "+250788444999")
+        approve_report(first, self.moderator)
+        approve_report(second, self.moderator)
+        submit_report(self.user, ReportType.PHONE, "0788 111 222")
+        rejected = submit_report(self.user, ReportType.PHONE, "0788 333 444")
+        reject_report(rejected, self.moderator)
+
+        response = self.client.get("/api/reports/scam-numbers/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["numbers"], [{"phone_number": "+250788444999", "reports": 2}])
+
+    def test_switched_off_records_are_not_listed(self):
+        approve_report(submit_report(self.user, ReportType.PHONE, "0788 444 999"), self.moderator)
+        PhoneReferenceRecord.objects.update(active=False)
+
+        response = self.client.get("/api/reports/scam-numbers/")
+        self.assertEqual(response.data["numbers"], [])
+
+    def test_list_is_public(self):
+        self.assertEqual(self.client.get("/api/reports/scam-numbers/").status_code, 200)
+
+
+class DirectReportTests(APITestCase):
+    # Direct phone reports are approved at once; everything else still waits for a moderator.
+    def setUp(self):
+        self.user = User.objects.create_user("reporter", password="pass12345")
+        self.client.force_authenticate(self.user)
+
+    def report(self, **body):
+        return self.client.post("/api/reports/", {"report_type": "PHONE", "content": "0788 555 666", **body}, format="json")
+
+    def test_direct_phone_report_is_approved_and_listed_at_once(self):
+        response = self.report(review_mode="DIRECT")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["status"], "APPROVED")
+        self.assertEqual(response.data["review_mode"], "DIRECT")
+        report = CommunityReport.objects.get()
+        self.assertIsNone(report.moderation_review.moderator)
+        self.assertTrue(PhoneReferenceRecord.objects.filter(phone_number="+250788555666", active=True).exists())
+        numbers = self.client.get("/api/reports/scam-numbers/").data["numbers"]
+        self.assertEqual(numbers, [{"phone_number": "+250788555666", "reports": 1}])
+
+    def test_reports_wait_for_a_moderator_by_default(self):
+        response = self.report()
+        self.assertEqual(response.data["status"], "PENDING")
+        self.assertEqual(response.data["review_mode"], "MODERATED")
+        self.assertEqual(PhoneReferenceRecord.objects.count(), 0)
+
+    def test_only_phone_numbers_can_be_reported_directly(self):
+        response = self.client.post(
+            "/api/reports/", {"report_type": "URL", "content": "http://bad.example", "review_mode": "DIRECT"}, format="json"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("review_mode", response.data)
+        self.assertEqual(CommunityReport.objects.count(), 0)
+
+    def test_direct_reports_are_limited_per_day(self):
+        for number in range(5):
+            self.assertEqual(self.report(content=f"078855500{number}", review_mode="DIRECT").status_code, 201)
+        response = self.report(content="0788555009", review_mode="DIRECT")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("5 direct reports per day", str(response.data["review_mode"]))
+
+    def test_moderator_can_remove_a_wrong_direct_report_from_the_list(self):
+        from .services import remove_from_scam_list
+        self.report(review_mode="DIRECT")
+        self.assertEqual(remove_from_scam_list(CommunityReport.objects.get()), 1)
+        self.assertEqual(self.client.get("/api/reports/scam-numbers/").data["numbers"], [])

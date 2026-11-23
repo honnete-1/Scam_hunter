@@ -45,6 +45,12 @@ class ReputationSerializer(serializers.Serializer):
     first_reported = serializers.DateField(allow_null=True, help_text="Date of the first approved report.")
 
 
+class EnglishTextSerializer(serializers.Serializer):
+    headline = serializers.CharField()
+    explanation = serializers.CharField()
+    safer_action = serializers.CharField()
+
+
 class AnalysisResultSerializer(serializers.Serializer):
     status = serializers.ChoiceField(
         choices=["SUCCESS", "CHECK_UNAVAILABLE"],
@@ -64,6 +70,16 @@ class AnalysisResultSerializer(serializers.Serializer):
     ai_score = serializers.IntegerField(
         allow_null=True, min_value=0, max_value=100,
         help_text="Messages only: the AI model's scam-likelihood (0–100), or null if the AI did not run.",
+    )
+    headline = serializers.CharField(help_text="Short title of the result, e.g. for a phone notification.")
+    language = serializers.CharField(
+        allow_null=True,
+        help_text="Messages only: language of the message (ISO 639-1, e.g. rw, fr), detected by the AI; null if unknown.",
+    )
+    english = EnglishTextSerializer(
+        allow_null=True,
+        help_text="Set when headline, explanation, safer_action and indicator explanations were translated into the "
+                  "message's language; holds the English originals.",
     )
 
 

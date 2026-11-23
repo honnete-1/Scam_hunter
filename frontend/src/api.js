@@ -107,11 +107,16 @@ export function getCurrentUser() {
   return request("/accounts/me/");
 }
 
-export function submitReport({ reportType, content, details }) {
+export function submitReport({ reportType, content, details, reviewMode = "MODERATED" }) {
   return request("/reports/", {
     method: "POST",
-    body: { report_type: reportType, content, details },
+    body: { report_type: reportType, content, details, review_mode: reviewMode },
   });
+}
+
+// The newest published Android build (APK link and version), or apk_url null if none yet.
+export function getLatestAndroidBuild() {
+  return request("/app/android/");
 }
 
 export function getAlerts() {

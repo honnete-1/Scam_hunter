@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import CheckPanel from "../components/CheckPanel";
 import DemoVideo from "../components/DemoVideo";
 import HowSteps from "../components/HowSteps";
+import { QRImage, useAndroidRelease } from "../components/AndroidApp";
 import { ArrowIcon, LockIcon } from "../components/Icons";
 import PhoneMockup, { MessageCheckScreen, MobileHomeScreen } from "../components/PhoneMockup";
 import { media, rwandaStats } from "../content";
@@ -126,6 +127,8 @@ function HowItWorks() {
 }
 
 function MobilePreview() {
+  // The QR code always points to the newest published APK.
+  const release = useAndroidRelease();
   return (
     <section className="section section--dark" aria-labelledby="mobile-title">
       <div className="container split">
@@ -136,6 +139,14 @@ function MobilePreview() {
             and a result you can understand at a glance.
           </p>
           <Link to="/mobile" className="btn btn--check">Get the Android App</Link>
+          {release.apkUrl && (
+            <figure className="qr qr--home">
+              <QRImage value={release.apkUrl} size={150} label="QR code that downloads the latest Scam Hunter Android app" />
+              <figcaption className="small">
+                Scan with your Android phone to install{release.version ? ` version ${release.version}` : ""}.
+              </figcaption>
+            </figure>
+          )}
         </div>
         <div className="split__visual">
           <PhoneMockup>

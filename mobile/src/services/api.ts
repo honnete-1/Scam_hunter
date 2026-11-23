@@ -1,6 +1,6 @@
 // Every call to the Django API goes through this file. Screens never call fetch directly.
 import { API_URL, REQUEST_TIMEOUT_MS } from '../config';
-import type { AnalysisResult, CheckType, CommunityReport, User } from '../types/api';
+import type { AnalysisResult, CheckType, CommunityReport, ReviewMode, ScamNumberList, User } from '../types/api';
 
 // "kind" says what went wrong without exposing server details to the user.
 export type FailureKind = 'network' | 'validation' | 'auth' | 'server';
@@ -108,13 +108,23 @@ export function getCurrentUser() {
   return request<User>('/api/accounts/me/');
 }
 
-export function submitReport(report: { reportType: CheckType; content: string; details: string }) {
+export function submitReport(report: { reportType: CheckType; content: string; details: string; reviewMode?: ReviewMode }) {
   return request<CommunityReport>('/api/reports/', {
     method: 'POST',
-    body: { report_type: report.reportType, content: report.content, details: report.details },
+    body: {
+      report_type: report.reportType,
+      content: report.content,
+      details: report.details,
+      review_mode: report.reviewMode ?? 'MODERATED',
+    },
   });
 }
 
 export function getMyReports() {
   return request<CommunityReport[]>('/api/reports/');
+}
+
+// Approved scam numbers, saved on the phone for instant call and SMS warnings.
+export function getScamNumbers() {
+  return request<ScamNumberList>('/api/reports/scam-numbers/');
 }

@@ -1,0 +1,22 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.scamshield'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.scamshield"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation "androidx.core:core-ktx:1.17.0"
+}

@@ -34,6 +34,11 @@ export type AnalysisResult = {
   reputation?: PhoneReputation | null;
   // The AI model's scam-likelihood score (0-100), or null when the AI did not run.
   ai_score?: number | null;
+  // Short title, and the message's language. When the result was translated into that language,
+  // "english" holds the original English text.
+  headline?: string;
+  language?: string | null;
+  english?: { headline: string; explanation: string; safer_action: string } | null;
 };
 
 export type User = {
@@ -45,12 +50,22 @@ export type User = {
 
 export type ReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
+// MODERATED: a moderator checks it first. DIRECT: phone numbers only, flagged straight away.
+export type ReviewMode = 'MODERATED' | 'DIRECT';
+
 export type CommunityReport = {
   id: number;
   report_type: CheckType;
   content: string;
   details: string;
+  review_mode?: ReviewMode;
   status: ReportStatus;
   created_at: string;
   updated_at: string;
+};
+
+export type ScamNumberList = {
+  generated_at: string;
+  count: number;
+  numbers: { phone_number: string; reports: number }[];
 };

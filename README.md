@@ -147,10 +147,12 @@ Measure the effect of the AI on the evaluation sets (uses your free quota slowly
 python manage.py evaluate_detector --online
 ```
 
-Public community API: `GET /api/reports/alerts/` (recent approved reports, with personal details hidden) and
-`GET /api/reports/stats/` (real counts), shown on the web app's **Scam Alerts** page.
+Public community API: `GET /api/reports/alerts/` (recent approved reports, with personal details hidden),
+`GET /api/reports/stats/` (real counts), shown on the web app's **Scam Alerts** page, and
+`GET /api/reports/scam-numbers/` (approved scam numbers, downloaded by the Android app).
 
-Real-time SMS and call protection (Android, like a caller-ID app) is planned next: see
+The Android app has **real-time protection** like a caller-ID app: it warns about (or silences/blocks) scam
+calls before you answer and flags scam SMS as they arrive. See
 [docs/realtime-protection.md](docs/realtime-protection.md).
 
 ## Message detector and its limits
@@ -205,6 +207,21 @@ reference lookup also ignores any record linked to a report that is not APPROVED
 Moderators can approve/reject from the admin (actions on the Community Reports list)
 or through the API.
 
+**Direct reports.** A logged-in user can report a *phone number* with `"review_mode": "DIRECT"`.
+It goes through the same `approve_report()` straight away (the review is saved with no moderator and the reason
+"Direct report"), so the number is flagged for everyone at once. To limit abuse, each account can make 5 direct
+reports per day, and messages and links always need a moderator. If a direct report was wrong, a moderator selects
+it in the admin and uses **Remove selected numbers/links from the scam list** (the record is switched off, history kept).
+
+## Answers in the message's language
+
+When a message is not in English (e.g. Kinyarwanda, French, Swahili), the AI check also reports its language.
+The backend then translates its own headline, explanation, safer action and warning-sign explanations into that
+language (`checking/translator.py`) and keeps the English in `english`. Only Scam Hunter's explanation text is sent
+for translation, never the user's message. If the AI is not set up or the translation fails, the answer stays in English.
+The rules themselves only know English phrases, so a non-English scam is currently flagged by the AI (Caution) rather
+than by the rules.
+
 ## API
 
 | Method | Endpoint | Auth |
@@ -219,5 +236,9 @@ or through the API.
 | GET/POST | `/api/reports/` `{"report_type": "MESSAGE"/"URL"/"PHONE", "content": "...", "details": "..."}` | token |
 | POST | `/api/reports/<id>/approve/` `{"reason": "..."}` | staff |
 | POST | `/api/reports/<id>/reject/` `{"reason": "..."}` | staff |
+| GET | `/api/reports/scam-numbers/` (approved scam numbers for the Android app) | – |
+| GET | `/api/app/android/` (newest published APK link and version) | – |
+
+`POST /api/reports/` also accepts `"review_mode": "DIRECT"` for phone numbers (see Community reports).
 
 Send the token as `Authorization: Token <key>`.
