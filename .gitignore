@@ -2,6 +2,8 @@
 __pycache__/
 *.pyc
 db.sqlite3
+# Uploaded proofs (private)
+media/
 
 # Private keys and settings
 .env

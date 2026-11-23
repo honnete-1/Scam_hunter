@@ -1,6 +1,6 @@
 // Every call to the Django API goes through this file. Screens never call fetch directly.
 import { API_URL, REQUEST_TIMEOUT_MS } from '../config';
-import type { AnalysisResult, CheckType, CommunityReport, ReviewMode, ScamNumberList, User } from '../types/api';
+import type { AnalysisResult, CheckType, CommunityReport, RemovalRequest, ReviewMode, ScamNumberList, User } from '../types/api';
 
 // "kind" says what went wrong without exposing server details to the user.
 export type FailureKind = 'network' | 'validation' | 'auth' | 'server';
@@ -18,7 +18,9 @@ export function setAuthToken(token: string | null) {
 
 async function request<T>(path: string, options: { method?: string; body?: object } = {}): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body) headers['Content-Type'] = 'application/json';
+  // A FormData body (file upload) sets its own multipart Content-Type.
+  const isForm = options.body instanceof FormData;
+  if (options.body && !isForm) headers['Content-Type'] = 'application/json';
   if (authToken) headers.Authorization = `Token ${authToken}`;
 
   const controller = new AbortController();
@@ -29,7 +31,7 @@ async function request<T>(path: string, options: { method?: string; body?: objec
     response = await fetch(API_URL + path, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body: isForm ? (options.body as FormData) : options.body ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
     });
   } catch {
@@ -122,6 +124,24 @@ export function submitReport(report: { reportType: CheckType; content: string; d
 
 export function getMyReports() {
   return request<CommunityReport[]>('/api/reports/');
+}
+
+export type ProofFile = { uri: string; name: string; mimeType: string };
+
+// The owner of a wrongly reported number asks to be taken off the scam list, with a proof file.
+export function sendRemovalRequest(details: { phoneNumber: string; fullName: string; contact: string; explanation: string; proof: ProofFile }) {
+  const form = new FormData();
+  form.append('phone_number', details.phoneNumber);
+  form.append('full_name', details.fullName);
+  form.append('contact', details.contact);
+  form.append('explanation', details.explanation);
+  // React Native uploads a local file from this { uri, name, type } shape.
+  form.append('proof', { uri: details.proof.uri, name: details.proof.name, type: details.proof.mimeType } as unknown as Blob);
+  return request<RemovalRequest>('/api/reports/removal-requests/', { method: 'POST', body: form });
+}
+
+export function getMyRemovalRequests() {
+  return request<RemovalRequest[]>('/api/reports/removal-requests/');
 }
 
 // Approved scam numbers, saved on the phone for instant call and SMS warnings.

@@ -216,6 +216,7 @@ export default function CheckPanel({ initialType = "MESSAGE", titleTag: Title = 
           ref={resultRef}
           result={result}
           checkType={type}
+          checkedValue={checkedValue}
           onReport={reportThis}
           onCheckAnother={checkAnother}
           onTryAgain={runCheck}

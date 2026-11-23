@@ -1920,3 +1920,7 @@ section[id] {
 }
 .qr--home figcaption { max-width: 150px; text-align: center; }
 .mobile-get .qr { margin: 8px 0 16px; }
+
+/* Removal requests */
+.page-section { margin-top: 48px; }
+.removal-hint { margin-top: 16px; }

@@ -1,5 +1,5 @@
 // Friendly text for the values the backend returns. Display only: no detection logic lives here.
-import type { CheckType, ConcernLevel, ReportStatus } from '../types/api';
+import type { CheckType, ConcernLevel, RemovalRequestStatus, ReportStatus } from '../types/api';
 import type { StatusTone } from '../theme/colors';
 
 export const concernLabels: Record<ConcernLevel, { label: string; tone: StatusTone }> = {
@@ -51,6 +51,13 @@ export const reportStatusLabels: Record<ReportStatus, string> = {
   PENDING: 'Pending',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
+  REMOVED: 'Removed from list',
+};
+
+export const removalStatusLabels: Record<RemovalRequestStatus, string> = {
+  PENDING: 'Waiting for a moderator',
+  ACCEPTED: 'Accepted: number removed',
+  DECLINED: 'Declined',
 };
 
 export const NETWORK_ERROR = {

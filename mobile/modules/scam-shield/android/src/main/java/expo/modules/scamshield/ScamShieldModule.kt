@@ -44,7 +44,8 @@ class ScamShieldModule : Module() {
         "popupEnabled" to settings.popupEnabled,
         "overlayAllowed" to WarningOverlay.canShow(context),
         "scamNumberCount" to settings.scamNumberCount,
-        "numbersSyncedAt" to settings.numbersSyncedAt.toDouble()
+        "numbersSyncedAt" to settings.numbersSyncedAt.toDouble(),
+        "lastCallCheckedAt" to settings.lastCallCheckedAt.toDouble()
       )
     }
 

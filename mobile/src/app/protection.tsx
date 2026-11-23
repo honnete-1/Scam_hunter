@@ -10,7 +10,7 @@ import { concernLabels } from '../content/labels';
 import { useTheme } from '../context/ThemeContext';
 import {
   clearAlerts, disableCallProtection, disableSmsProtection, enableCallProtection, enableSmsProtection, getAlerts,
-  getStatus, openCallerIdSettings, openOverlaySettings, isProtectionAvailable, setCallAction, setPopupEnabled, setSkipContacts,
+  allowContactCalls, getStatus, openCallerIdSettings, openOverlaySettings, isProtectionAvailable, setCallAction, setPopupEnabled, setSkipContacts,
   showTestAlert, syncScamNumbers,
   type CallAction, type ProtectionAlert, type ProtectionStatus,
 } from '../services/protection';
@@ -147,6 +147,12 @@ export default function ProtectionScreen() {
     refresh();
   }
 
+  async function toggleContactCalls() {
+    const outcome = await allowContactCalls();
+    if (outcome === 'blocked') setMessage('Contacts access is turned off for Scam Hunter. You can allow it in the app settings.');
+    refresh();
+  }
+
   async function updateNumbers() {
     setSyncing(true);
     const ok = await syncScamNumbers();
@@ -190,12 +196,26 @@ export default function ProtectionScreen() {
         <ToggleRow
           title="Check incoming calls"
           detail={status.callScreeningSupported
-            ? 'Only the caller\'s number is checked. Calls from your contacts are not checked.'
+            ? 'Only the caller\'s number is checked, never the call itself.'
             : 'Needs Android 10 or newer.'}
           value={callsOn}
           onChange={toggleCalls}
           disabled={!status.callScreeningSupported}
         />
+        {callsOn && !status.contactsPermission ? (
+          <View style={[styles.warning, { borderColor: colors.status.caution.border, backgroundColor: colors.status.caution.background }]}>
+            <AppText variant="small" color={colors.status.caution.text}>
+              Calls from numbers saved in your contacts are not checked yet, even if they were reported as scams.
+              Android needs contacts access for that.
+            </AppText>
+            <TextButton label="Allow Contacts Access" onPress={toggleContactCalls} />
+          </View>
+        ) : null}
+        {callsOn ? (
+          <AppText variant="small" muted style={styles.gap}>
+            {status.lastCallCheckedAt ? `Last call checked ${timeAgo(status.lastCallCheckedAt)}` : 'No call checked yet'}
+          </AppText>
+        ) : null}
         <AppText variant="small" muted style={styles.gap}>When a confirmed scam number calls</AppText>
         <View accessibilityRole="radiogroup" style={[styles.segment, { backgroundColor: colors.surfaceAlt }]}>
           {CALL_ACTIONS.map((option) => {

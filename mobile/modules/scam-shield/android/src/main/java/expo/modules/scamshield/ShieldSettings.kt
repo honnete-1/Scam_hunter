@@ -28,9 +28,16 @@ class ShieldSettings(context: Context) {
     }
 
   var skipContacts: Boolean
-    get() = prefs.getBoolean("skip_contacts", true)
+    get() = prefs.getBoolean("skip_contacts", false)
     set(value) {
       prefs.edit().putBoolean("skip_contacts", value).commit()
+    }
+
+  // When Android last asked this app to check a call. Shows the user that call checking really runs.
+  var lastCallCheckedAt: Long
+    get() = prefs.getLong("last_call_checked_at", 0L)
+    set(value) {
+      prefs.edit().putLong("last_call_checked_at", value).apply()
     }
 
   // Show the warning card on top of the call screen / other apps (needs "Display over other apps").

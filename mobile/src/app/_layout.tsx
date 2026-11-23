@@ -37,6 +37,7 @@ function AppStack() {
         <Stack.Screen name="scan" options={{ title: 'Scan QR Code' }} />
         <Stack.Screen name="protection" options={{ title: 'Real-time Protection' }} />
         <Stack.Screen name="report" options={{ title: 'Report' }} />
+        <Stack.Screen name="removal-request" options={{ title: 'Remove My Number' }} />
         <Stack.Screen name="login" options={{ title: 'Log In' }} />
         <Stack.Screen name="signup" options={{ title: 'Sign Up' }} />
       </Stack>

@@ -107,12 +107,39 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# The website and the Android app both use this one database through the Django API.
+# PostgreSQL when DATABASE_URL is set (postgres://user:password@host:port/name, kept in .env),
+# otherwise the SQLite file, which is enough for a quick local try-out.
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+
+
+def database_from_url(url):
+    from urllib.parse import unquote, urlparse
+
+    parts = urlparse(url)
+    if parts.scheme not in ('postgres', 'postgresql'):
+        raise ValueError('DATABASE_URL must start with postgres:// or postgresql://')
+    return {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': unquote(parts.path.lstrip('/')),
+        'USER': unquote(parts.username or ''),
+        'PASSWORD': unquote(parts.password or ''),
+        'HOST': parts.hostname or 'localhost',
+        'PORT': str(parts.port or 5432),
+        # Reuse connections for a minute instead of reconnecting on every request.
+        'CONN_MAX_AGE': 60,
     }
-}
+
+
+if DATABASE_URL:
+    DATABASES = {'default': database_from_url(DATABASE_URL)}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -151,6 +178,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Uploaded files (proofs sent with removal requests). They are private: no URL serves this folder;
+# moderators open a proof only through the admin.
+MEDIA_ROOT = Path(os.environ.get('SCAM_HUNTER_MEDIA_ROOT', BASE_DIR / 'media'))
+# Proof photos can be a few MB.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -180,6 +213,7 @@ SPECTACULAR_SETTINGS = {
     'TAGS': [
         {'name': 'Checks', 'description': 'Check a message, link or phone number. No account needed; nothing is stored.'},
         {'name': 'Community reports', 'description': 'Submit reports, list your own, and read the public alerts feed and statistics.'},
+        {'name': 'Removal requests', 'description': 'The owner of a wrongly reported number asks to be taken off the scam list, with proof.'},
         {'name': 'Moderation', 'description': 'Staff only. Approve or reject pending reports. Approved links and numbers become reference records.'},
         {'name': 'Accounts', 'description': 'Sign up, log in to get a token, log out and read your profile.'},
         {'name': 'App', 'description': 'The newest Android app build, for the download button and QR code.'},

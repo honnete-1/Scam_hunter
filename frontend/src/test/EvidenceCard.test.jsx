@@ -2,11 +2,12 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import EvidenceCard from "../components/EvidenceCard";
+import { MemoryRouter } from "react-router";
 import { CAUTION_RESULT } from "./helpers";
 
 function renderCard(result, checkType = "MESSAGE", handlers = {}) {
   const props = { onReport: vi.fn(), onCheckAnother: vi.fn(), onTryAgain: vi.fn(), ...handlers };
-  const view = render(<EvidenceCard result={result} checkType={checkType} {...props} />);
+  const view = render(<MemoryRouter><EvidenceCard result={result} checkType={checkType} checkedValue="0788444999" {...props} /></MemoryRouter>);
   return { ...view, ...props };
 }
 
@@ -107,6 +108,8 @@ describe("New checking layers", () => {
       "PHONE"
     );
     expect(screen.getByText(/Reported by 3 community members, first on 2026-11-13/)).toBeInTheDocument();
+    // The owner of a wrongly reported number can ask for it to be removed.
+    expect(screen.getByRole("link", { name: "Ask a moderator to remove it" })).toHaveAttribute("href", "/removal-request");
   });
 
   it("shows the AI finding with a friendly label", () => {

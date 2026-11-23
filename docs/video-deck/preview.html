@@ -1,0 +1,165 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Manrope:wght@400..800&display=swap">
+<style>:root {
+  --navy: #0E1A33;
+  --navy-2: #13244A;
+  --ink: #F4F1EC;
+  --muted: #C3CCDD;
+  --accent: #F98513;
+  --accent-soft: #FFB766;
+  --danger: #E5484D;
+}
+
+body { font-family: 'Manrope', Arial, sans-serif; color: var(--ink); }
+
+section {
+  background: var(--navy);
+  color: var(--ink);
+  padding: 128px;
+  font-family: 'Manrope', Arial, sans-serif;
+  counter-increment: page;
+}
+
+h1, h2, h3 { font-family: 'Space Grotesk', Arial, sans-serif; color: var(--ink); margin: 0; }
+p { margin: 0; }
+
+/* Shared pieces, as in the example deck: a side tab next to the title and a stripe at the bottom. */
+.tab { position: absolute; left: 0; top: 104px; width: 22px; height: 84px; background: var(--accent); border-radius: 0 12px 12px 0; }
+.slide-title { position: absolute; left: 128px; top: 100px; width: 900px; font-size: 72px; font-weight: 700; line-height: 1.15; }
+.stripe { position: absolute; left: 0; top: 1040px; width: 1920px; height: 40px; background: var(--accent); }
+
+.photo { position: absolute; object-fit: cover; }
+.shade { position: absolute; }
+
+.label { position: absolute; font-size: 28px; font-weight: 700; letter-spacing: 3px; color: var(--accent-soft); line-height: 1.2; }
+.caption { position: absolute; font-family: 'Space Grotesk', Arial, sans-serif; font-size: 48px; font-weight: 700; line-height: 1.12; color: var(--ink); }
+.sub { position: absolute; font-size: 28px; line-height: 1.35; color: var(--muted); }
+.source { position: absolute; font-size: 24px; color: var(--muted); }
+
+/* Cover */
+.cover-eyebrow { position: absolute; left: 128px; top: 330px; width: 900px; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: var(--accent-soft); }
+.cover-title { position: absolute; left: 128px; top: 390px; width: 1100px; font-size: 160px; font-weight: 700; line-height: 1; }
+.cover-sub { position: absolute; left: 128px; top: 580px; width: 1000px; font-size: 64px; font-weight: 500; line-height: 1.1; font-family: 'Space Grotesk', Arial, sans-serif; }
+.cover-meta { position: absolute; left: 128px; top: 920px; width: 1300px; font-size: 28px; color: var(--muted); }
+.logo { position: absolute; border-radius: 28px; }
+
+/* Problem: the headline statistic */
+.stat { position: absolute; left: 860px; top: 92px; width: 932px; text-align: right; font-family: 'Space Grotesk', Arial, sans-serif; font-size: 88px; font-weight: 700; line-height: 1.05; color: var(--accent); }
+.stat-line { position: absolute; left: 760px; top: 192px; width: 1032px; text-align: right; font-family: 'Space Grotesk', Arial, sans-serif; font-size: 48px; font-weight: 600; line-height: 1.15; color: var(--ink); }
+
+/* Why: icon rows */
+.why-statement { position: absolute; left: 128px; top: 250px; width: 880px; font-family: 'Space Grotesk', Arial, sans-serif; font-size: 56px; font-weight: 600; line-height: 1.15; color: var(--accent-soft); }
+.why-rows { position: absolute; left: 128px; top: 470px; width: 880px; display: flex; flex-direction: column; }
+.why-row { display: flex; align-items: center; gap: 36px; padding: 30px 0; border-top: 2px solid rgba(195, 204, 221, 0.22); }
+.why-row x-icon { width: 64px; height: 64px; color: var(--accent); }
+.why-row p { font-size: 42px; font-weight: 600; line-height: 1.2; color: var(--ink); }
+
+/* Solution: phone frames */
+.panel-bg { position: absolute; }
+.phone { position: absolute; border-radius: 48px; border: 12px solid #070D1C; overflow: hidden; background: #070D1C; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); }
+.phone img { width: 100%; height: 100%; object-fit: cover; }
+.result-card { position: absolute; border-radius: 28px; overflow: hidden; background: #FBFAF7; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); }
+.result-card img { width: 100%; height: 100%; object-fit: contain; }
+.call-screen { width: 100%; height: 100%; background: linear-gradient(180deg, #2B3A63 0%, #0B1226 100%); position: relative; }
+.call-name { position: absolute; left: 0; top: 330px; width: 316px; text-align: center; font-family: 'Space Grotesk', Arial, sans-serif; font-size: 30px; font-weight: 700; color: var(--ink); }
+.call-state { position: absolute; left: 0; top: 380px; width: 316px; text-align: center; font-size: 24px; color: var(--muted); }
+.call-btn { position: absolute; width: 76px; height: 76px; }
+.warn-card { position: absolute; left: 14px; top: 34px; width: 288px; box-sizing: border-box; padding: 18px 20px; border-radius: 20px; background: #0E1A33; border: 3px solid var(--danger); }
+.warn-brand { font-size: 24px; font-weight: 800; letter-spacing: 2px; color: var(--danger); }
+.warn-title { font-family: 'Space Grotesk', Arial, sans-serif; font-size: 32px; font-weight: 700; line-height: 1.1; color: var(--ink); margin-top: 6px; }
+.warn-text { font-size: 24px; line-height: 1.25; color: #FFE0B2; margin-top: 8px; }
+
+/* Closing */
+.thanks { position: absolute; left: 128px; top: 450px; width: 1664px; text-align: center; font-size: 150px; font-weight: 700; line-height: 1; }
+.thanks-sub { position: absolute; left: 128px; top: 640px; width: 1664px; text-align: center; font-size: 44px; font-weight: 500; color: var(--muted); font-family: 'Space Grotesk', Arial, sans-serif; }
+.thanks-meta { position: absolute; left: 128px; top: 900px; width: 1664px; text-align: center; font-size: 28px; color: var(--muted); }
+
+/* Gentle arrival: the plain rules above are the finished look. */
+@keyframes rise { from { opacity: 0; transform: translateY(28px); } }
+@keyframes fade { from { opacity: 0; } }
+.rise { animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 140ms); }
+.fade { animation: fade 900ms ease both; animation-delay: calc(var(--i, 0) * 140ms); }
+
+html,body{margin:0;background:#555}
+.frame{width:1920px;height:1080px;transform:scale(0.4);transform-origin:0 0;margin-bottom:-640px;}
+.frame section{width:1920px;height:1080px;box-sizing:border-box;position:relative;overflow:hidden;margin:0}
+x-icon{display:block;background:var(--accent);border-radius:50%}
+x-shape{display:block;position:absolute;border-radius:50%}
+</style></head><body><div class="frame"><section id="cover" data-transition="fade">
+<img class="photo fade" src="intro.jpg" alt="Kigali skyline at sunset" style="left:0;top:0;width:1920px;height:1040px">
+<div class="shade" style="left:0;top:0;width:1920px;height:1040px;background:linear-gradient(90deg, rgba(14,26,51,0.94) 0%, rgba(14,26,51,0.78) 42%, rgba(14,26,51,0.05) 78%)"></div>
+<img class="logo fade" src="icon.png" alt="Scam Hunter logo" style="left:1648px;top:72px;width:144px;height:144px">
+<p class="cover-eyebrow rise" style="--i:1">SYSTEM DESCRIPTION</p>
+<h1 class="cover-title rise" style="--i:2">Scam Hunter</h1>
+<p class="cover-sub rise" style="--i:3">Check before you act.</p>
+<p class="cover-meta rise" style="--i:4">Honnete Nishimwe · African Leadership University · November 2026</p>
+<div class="stripe"></div>
+
+</section>
+</div><div class="frame"><section id="problem" data-transition="fade">
+<img class="photo fade" src="sms.jpg" alt="A woman reading a message on her phone in the dark" style="left:0;top:400px;width:640px;height:640px;--i:1">
+<img class="photo fade" src="call.jpg" alt="A man taking a phone call outdoors" style="left:640px;top:400px;width:640px;height:640px;--i:2">
+<img class="photo fade" src="money.jpg" alt="Banknotes next to a smartphone" style="left:1280px;top:400px;width:640px;height:640px;--i:3">
+<div class="shade" style="left:0;top:400px;width:1920px;height:640px;background:linear-gradient(180deg, rgba(14,26,51,0.05) 30%, rgba(14,26,51,0.92) 100%)"></div>
+<div class="tab"></div>
+<h2 class="slide-title">The Problem</h2>
+<p class="stat rise" style="--i:1">RWF 424 million</p>
+<p class="stat-line rise" style="--i:2">stolen by one scam network in 7 months</p>
+<p class="source" style="left:992px;top:310px;width:800px;text-align:right">[Rwanda National Police, 2024]</p>
+<p class="label rise" style="left:64px;top:870px;width:540px;--i:3">FAKE SMS</p>
+<p class="caption rise" style="left:64px;top:914px;width:540px;--i:3">“You won a jackpot!”</p>
+<p class="label rise" style="left:704px;top:870px;width:540px;--i:4">FAKE CALLS</p>
+<p class="caption rise" style="left:704px;top:914px;width:560px;--i:4">“Your MoMo is blocked”</p>
+<p class="label rise" style="left:1344px;top:870px;width:540px;--i:5">FAKE EMERGENCIES</p>
+<p class="caption rise" style="left:1344px;top:914px;width:540px;--i:5">“Send money now”</p>
+<div class="stripe"></div>
+
+</section>
+</div><div class="frame"><section id="why" data-transition="fade" style="background:#13244A">
+<img class="photo fade" src="worried.jpg" alt="A worried man holding his phone in front of a laptop" style="left:1080px;top:0;width:840px;height:1040px">
+<div class="shade" style="left:1080px;top:0;width:840px;height:1040px;background:linear-gradient(90deg, rgba(19,36,74,1) 0%, rgba(19,36,74,0.35) 40%, rgba(19,36,74,0) 70%)"></div>
+<div class="tab"></div>
+<h2 class="slide-title">Why It’s a Problem</h2>
+<p class="why-statement rise" style="--i:1">Scams win in the few seconds before you act.</p>
+<div class="why-rows">
+<div class="why-row rise" style="--i:2"><x-icon name="Clock"></x-icon><p>Urgency leaves no time to check</p></div>
+<div class="why-row rise" style="--i:3"><x-icon name="Verified"></x-icon><p>They pose as MTN, a bank or family</p></div>
+<div class="why-row rise" style="--i:4"><x-icon name="Key"></x-icon><p>One PIN or one tap, and the money is gone</p></div>
+</div>
+<p class="source" style="left:128px;top:960px;width:900px">Warning signs: National Cyber Security Authority [NCSA, 2022]</p>
+<div class="stripe"></div>
+
+</section>
+</div><div class="frame"><section id="solution" data-transition="fade">
+<div class="panel-bg" style="left:0;top:270px;width:640px;height:770px;background:#13244A"></div>
+<div class="panel-bg" style="left:640px;top:270px;width:640px;height:770px;background:#1A2E5A"></div>
+<img class="photo fade" src="happy.jpg" alt="A smiling man reading his phone" style="left:1280px;top:270px;width:640px;height:770px;--i:3">
+<div class="shade" style="left:0;top:270px;width:1920px;height:770px;background:linear-gradient(180deg, rgba(14,26,51,0) 45%, rgba(14,26,51,0.95) 100%)"></div>
+<div class="result-card fade" style="left:60px;top:330px;width:520px;height:470px;--i:1"><img src="result_crop.png" alt="Scam Hunter result: High Concern, 4 warning signs found, AI scam-likelihood score 95%"></div>
+<div class="phone fade" style="left:802px;top:300px;width:316px;height:520px;--i:2">
+<div class="call-screen">
+<div class="warn-card"><p class="warn-brand">SCAM HUNTER</p><p class="warn-title">Scam warning</p><p class="warn-text">Reported as a scam by 3 people</p></div>
+<p class="call-name">+250 788 444 999</p>
+<p class="call-state">Incoming call</p>
+<x-shape kind="ellipse" class="call-btn" style="left:44px;top:420px;background:#E5484D"></x-shape>
+<x-shape kind="ellipse" class="call-btn" style="left:196px;top:420px;background:#2FB36B"></x-shape>
+</div>
+</div>
+<div class="tab"></div>
+<h2 class="slide-title">The Solution</h2>
+<p class="sub" style="left:1000px;top:126px;width:792px;text-align:right">Website + Android app, one Django backend</p>
+<p class="caption rise" style="left:64px;top:860px;width:540px;--i:4">Check any message, link or number</p>
+<p class="caption rise" style="left:704px;top:860px;width:540px;--i:5">Warns during calls and SMS</p>
+<p class="caption rise" style="left:1344px;top:860px;width:540px;--i:6">Explains why, in your language</p>
+<div class="stripe"></div>
+
+</section>
+</div><div class="frame"><section id="closing">
+<img class="logo fade" src="icon.png" alt="Scam Hunter logo" style="left:888px;top:170px;width:144px;height:144px">
+<h1 class="thanks rise" style="--i:1">Thank You!</h1>
+<p class="thanks-sub rise" style="--i:2">Next: a live demo of the website and the Android app</p>
+<p class="thanks-meta rise" style="--i:3">Scam Hunter · Check before you act.</p>
+<div class="stripe"></div>
+
+</section>
+</div></body></html>

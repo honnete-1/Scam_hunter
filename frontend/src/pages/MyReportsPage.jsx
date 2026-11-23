@@ -4,7 +4,7 @@ import { NETWORK_ERROR, SERVER_ERROR, getMyReports } from "../api";
 import { useAuth } from "../auth";
 
 const TYPE_LABELS = { MESSAGE: "Message", URL: "URL", PHONE: "Phone number" };
-const STATUS_LABELS = { PENDING: "Pending", APPROVED: "Approved", REJECTED: "Rejected" };
+const STATUS_LABELS = { PENDING: "Pending", APPROVED: "Approved", REJECTED: "Rejected", REMOVED: "Removed from list" };
 
 function formatDate(value) {
   return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });

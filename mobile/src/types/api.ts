@@ -48,7 +48,21 @@ export type User = {
   is_staff: boolean;
 };
 
-export type ReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type ReportStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REMOVED';
+
+export type RemovalRequestStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED';
+
+export type RemovalRequest = {
+  id: number;
+  phone_number: string;
+  full_name: string;
+  contact: string;
+  explanation: string;
+  status: RemovalRequestStatus;
+  moderator_note: string;
+  created_at: string;
+  reviewed_at: string | null;
+};
 
 // MODERATED: a moderator checks it first. DIRECT: phone numbers only, flagged straight away.
 export type ReviewMode = 'MODERATED' | 'DIRECT';

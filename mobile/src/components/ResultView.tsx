@@ -16,6 +16,8 @@ type Props = {
   onReport: () => void;
   onCheckAnother: () => void;
   onTryAgain: () => void;
+  // Shown for a phone number on the scam list, for its owner if it was reported by mistake.
+  onRequestRemoval?: () => void;
 };
 
 function countText(count: number) {
@@ -175,7 +177,7 @@ Check before you act.`;
   return Share.share({ message }).catch(() => {});
 }
 
-export default function ResultView({ result, checkType, retrying, onReport, onCheckAnother, onTryAgain }: Props) {
+export default function ResultView({ result, checkType, retrying, onReport, onCheckAnother, onTryAgain, onRequestRemoval }: Props) {
   const { colors } = useTheme();
   const [showDetails, setShowDetails] = useState(false);
   // Results for messages in another language come translated into it; this switches back to English.
@@ -307,6 +309,9 @@ export default function ResultView({ result, checkType, retrying, onReport, onCh
             <TextButton label="Check Another" onPress={onCheckAnother} />
           </>
         )}
+        {checkType === 'PHONE' && result.reference_match && onRequestRemoval ? (
+          <TextButton label="My Number Was Reported by Mistake" onPress={onRequestRemoval} />
+        ) : null}
       </View>
     </Animated.View>
   );

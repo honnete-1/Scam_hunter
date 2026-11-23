@@ -34,11 +34,12 @@ object ShieldChecks {
     return NOTHING
   }
 
-  fun checkSms(context: Context, sender: String, body: String): Decision {
+  fun checkSms(context: Context, sender: String, body: String, checkText: Boolean = true): Decision {
     val settings = ShieldSettings(context)
     val reports = if (PhoneNumbers.isPhoneNumber(sender)) settings.reportsFor(sender) else null
     // flagged is null unless the backend found warning signs in the text.
-    val flagged = ScamApi.checkMessage(settings.apiUrl, body, SMS_TIMEOUT_MS)?.takeIf { isWarning(it.concernLevel) }
+    val flagged = if (!checkText) null
+      else ScamApi.checkMessage(settings.apiUrl, body, SMS_TIMEOUT_MS)?.takeIf { isWarning(it.concernLevel) }
 
     if (reports != null) {
       val extra = if (flagged != null) " " + flagged.explanation else ""

@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { useId, useState } from "react";
 import { indicatorLabels, languageName, subjectNames } from "../content";
 
@@ -143,7 +144,7 @@ function Reputation({ reputation }) {
   );
 }
 
-export default function EvidenceCard({ result, checkType, onReport, onCheckAnother, onTryAgain, ref }) {
+export default function EvidenceCard({ result, checkType, checkedValue, onReport, onCheckAnother, onTryAgain, ref }) {
   const headingId = useId();
   // Results for messages in another language come translated into it; this switches back to English.
   const [inEnglish, setInEnglish] = useState(false);
@@ -230,6 +231,13 @@ export default function EvidenceCard({ result, checkType, onReport, onCheckAnoth
 
       <SaferAction text={saferAction} />
       <ChecksPerformed checks={result.checks} />
+
+      {checkType === "PHONE" && result.reference_match && (
+        <p className="small muted removal-hint">
+          Is this your number, reported by mistake?{" "}
+          <Link to="/removal-request" state={{ phoneNumber: checkedValue }}>Ask a moderator to remove it</Link>
+        </p>
+      )}
 
       <div className="evidence__actions">
         {isClear ? (

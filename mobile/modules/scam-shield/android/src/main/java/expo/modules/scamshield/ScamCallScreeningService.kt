@@ -5,11 +5,13 @@ import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.CallScreeningService.CallResponse
 
-// Android hands incoming calls from unknown numbers to this service before the phone rings.
+// Android hands incoming calls to this service before the phone rings. Calls from saved contacts
+// only come here when the app may read contacts, so a reported number saved as a contact is still checked.
 // Only the caller's number is checked; call audio is never touched.
 class ScamCallScreeningService : CallScreeningService() {
   override fun onScreenCall(callDetails: Call.Details) {
     val settings = ShieldSettings(this)
+    settings.lastCallCheckedAt = System.currentTimeMillis()
     val number = callDetails.handle?.schemeSpecificPart
     val incoming = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
       callDetails.callDirection == Call.Details.DIRECTION_INCOMING

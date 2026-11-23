@@ -19,14 +19,17 @@ class SmsScamReceiver : BroadcastReceiver() {
     // Long SMS arrive in several parts; join them back into one message.
     val body = parts.joinToString("") { it.messageBody ?: "" }
     if (body.isBlank()) return
-    if (settings.skipContacts && ShieldChecks.isSavedContact(context, sender)) return
+    // "Skip my contacts" only skips the text check: a reported scam number always gets a warning,
+    // even when it is saved as a contact.
+    val checkText = !(settings.skipContacts && ShieldChecks.isSavedContact(context, sender))
+    if (!checkText && settings.reportsFor(sender) == null) return
 
     // goAsync keeps the receiver alive while the network check runs (Android allows about 10 s).
     val pending = goAsync()
     val appContext = context.applicationContext
     Thread {
       try {
-        val decision = ShieldChecks.checkSms(appContext, sender, body)
+        val decision = ShieldChecks.checkSms(appContext, sender, body, checkText)
         ShieldChecks.alert(appContext, "SMS", sender, decision, ShieldSettings.ACTION_WARN)
       } catch (error: Exception) {
         // A failed check shows nothing; it is never reported as safe.

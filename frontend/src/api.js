@@ -32,7 +32,9 @@ export function clearToken() {
 // Returns { ok, status, kind, data }. "kind" tells the caller what went wrong without exposing server details.
 async function request(path, { method = "GET", body } = {}) {
   const headers = { Accept: "application/json" };
-  if (body) headers["Content-Type"] = "application/json";
+  // A FormData body (file upload) sets its own multipart Content-Type.
+  const isForm = typeof FormData !== "undefined" && body instanceof FormData;
+  if (body && !isForm) headers["Content-Type"] = "application/json";
   const token = getToken();
   if (token) headers.Authorization = `Token ${token}`;
 
@@ -41,7 +43,7 @@ async function request(path, { method = "GET", body } = {}) {
     response = await fetch(API_BASE + path, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body: isForm ? body : body ? JSON.stringify(body) : undefined,
     });
   } catch {
     return { ok: false, status: 0, kind: "network", data: null };
@@ -129,4 +131,19 @@ export function getCommunityStats() {
 
 export function getMyReports() {
   return request("/reports/");
+}
+
+// The owner of a wrongly reported number asks to be taken off the scam list, with a proof file.
+export function sendRemovalRequest({ phoneNumber, fullName, contact, explanation, proof }) {
+  const form = new FormData();
+  form.append("phone_number", phoneNumber);
+  form.append("full_name", fullName);
+  form.append("contact", contact);
+  form.append("explanation", explanation);
+  form.append("proof", proof);
+  return request("/reports/removal-requests/", { method: "POST", body: form });
+}
+
+export function getMyRemovalRequests() {
+  return request("/reports/removal-requests/");
 }

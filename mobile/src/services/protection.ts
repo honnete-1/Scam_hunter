@@ -22,6 +22,8 @@ export type ProtectionStatus = {
   overlayAllowed: boolean;
   scamNumberCount: number;
   numbersSyncedAt: number;
+  // When Android last asked the app to check a call (0 = never). Proves call checking is running.
+  lastCallCheckedAt: number;
 };
 
 // One saved warning. The message text itself is never saved, only who sent it and why it was flagged.
@@ -118,8 +120,19 @@ export async function enableCallProtection(): Promise<EnableOutcome> {
   const roleHeld = await shield.requestCallScreeningRole();
   if (!roleHeld) return 'blocked';
   shield.setCallsEnabled(true);
+  // Android only lets a caller ID app check calls from saved contacts when it may read contacts.
+  // Without it, a reported scammer who is saved as a contact would ring with no warning.
+  await allowContactCalls();
   await syncScamNumbers();
   return 'on';
+}
+
+export function allowContactCalls(): Promise<PermissionOutcome> {
+  return askPermission(
+    PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+    'Also check calls from your contacts',
+    'Android only lets Scam Hunter check calls from saved numbers with this permission, so a reported scammer saved as a contact is still flagged. Your contacts are never uploaded.',
+  );
 }
 
 export async function enableSmsProtection(): Promise<EnableOutcome> {

@@ -1,9 +1,11 @@
 from rest_framework import serializers
 
-from checking.requests import CheckValidationError, MessageCheck, PhoneCheck, URLCheck
+from pathlib import Path
 
-from .models import CommunityReport, ReportType, ReviewMode
-from .services import MAX_DIRECT_REPORTS_PER_DAY, direct_reports_today
+from checking.requests import CheckValidationError, MessageCheck, PhoneCheck, URLCheck, normalize_phone_number
+
+from .models import CommunityReport, RemovalRequest, RemovalRequestStatus, ReportType, ReviewMode
+from .services import MAX_DIRECT_REPORTS_PER_DAY, direct_reports_today, is_on_scam_list
 
 # Reports reuse the same validation as normal checks, so a reported URL
 # or phone number is always in a form the reference records can use.
@@ -43,11 +45,60 @@ class CommunityReportSerializer(serializers.ModelSerializer):
         return data
 
 
+MAX_PROOF_BYTES = 5 * 1024 * 1024
+# The first bytes of each allowed file type, so a renamed program cannot pass as a "letter".
+PROOF_SIGNATURES = {
+    ".pdf": [b"%PDF-"],
+    ".png": [b"\x89PNG\r\n\x1a\n"],
+    ".jpg": [b"\xff\xd8\xff"],
+    ".jpeg": [b"\xff\xd8\xff"],
+}
+
+
+class RemovalRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RemovalRequest
+        fields = ["id", "phone_number", "full_name", "contact", "explanation", "proof", "status", "moderator_note",
+                  "created_at", "reviewed_at"]
+        read_only_fields = ["status", "moderator_note", "created_at", "reviewed_at"]
+        extra_kwargs = {
+            "proof": {"write_only": True, "help_text": "A photo or PDF of the proof (JPG, PNG or PDF, at most 5 MB)."},
+            "phone_number": {"help_text": "The number to remove, in any format, e.g. 0788 123 456 or +250788123456."},
+            "explanation": {"help_text": "Why the number was reported by mistake."},
+        }
+
+    def validate_phone_number(self, value):
+        try:
+            number = normalize_phone_number(value)
+        except CheckValidationError as error:
+            raise serializers.ValidationError(str(error))
+        if not is_on_scam_list(number):
+            raise serializers.ValidationError("This number is not on the scam list, so there is nothing to remove.")
+        user = self.context["request"].user
+        if RemovalRequest.objects.filter(
+            submitted_by=user, phone_number=number, status=RemovalRequestStatus.PENDING
+        ).exists():
+            raise serializers.ValidationError("You already sent a request for this number. A moderator will review it soon.")
+        return number
+
+    def validate_proof(self, file):
+        extension = Path(file.name or "").suffix.lower()
+        if extension not in PROOF_SIGNATURES:
+            raise serializers.ValidationError("Please upload a JPG, PNG or PDF file.")
+        if file.size > MAX_PROOF_BYTES:
+            raise serializers.ValidationError("The file is too large. The limit is 5 MB.")
+        start = file.read(8)
+        file.seek(0)
+        if not any(start.startswith(signature) for signature in PROOF_SIGNATURES[extension]):
+            raise serializers.ValidationError("This file is not a real JPG, PNG or PDF.")
+        return file
+
+
 class ModerationInputSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True)
 
 
-# The serializers below only describe responses for the API documentation.
+# The serializers I put below only describe responses for the API documentation.
 
 class PublicAlertSerializer(serializers.Serializer):
     id = serializers.IntegerField()

@@ -92,6 +92,7 @@ export default function ProfileScreen() {
         </View>
         {lockMessage ? <AppText variant="small" muted accessibilityLiveRegion="polite">{lockMessage}</AppText> : null}
         <SecondaryButton label="Real-time Protection" onPress={() => router.push('/protection')} style={styles.button} />
+        <SecondaryButton label="My Number Was Reported by Mistake" onPress={() => router.push('/removal-request')} style={styles.button} />
       </View>
 
       <View style={[styles.section, { borderColor: colors.border }]}>

@@ -23,6 +23,7 @@ export default function Footer() {
             <li><Link to="/architecture">Architecture</Link></li>
             <li><Link to="/mobile">Mobile App</Link></li>
             <li><Link to="/report">Report</Link></li>
+            <li><Link to="/removal-request">Number reported by mistake?</Link></li>
             <li><a href="/admin/">Moderator login</a></li>
           </ul>
         </div>

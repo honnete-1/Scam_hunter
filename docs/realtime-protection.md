@@ -13,7 +13,7 @@ through official APIs, and only after the user agrees.
 
 | Event | Android mechanism | What Scam Hunter does |
 |-------|-------------------|-----------------------|
-| Incoming call | `CallScreeningService` (Android 10+). The user picks Scam Hunter as the **caller ID & spam app** in Android's own dialog. Android then passes the caller's number to the app before the phone rings, and gives it about 5 seconds to answer. Calls from saved contacts are not passed on. | 1. Looks the number up in the saved list of approved scam numbers (instant, works offline). 2. Otherwise asks `POST /api/check/phone/` (3 s limit). High Concern → warn, silence or block, as the user chose. Caution → warning only; the call still rings. |
+| Incoming call | `CallScreeningService` (Android 10+). The user picks Scam Hunter as the **caller ID & spam app** in Android's own dialog. Android then passes the caller's number to the app before the phone rings, and gives it about 5 seconds to answer. Calls from saved contacts are only passed on when the app may read contacts, so it asks for `READ_CONTACTS` when call protection is turned on; a reported scammer saved as a contact is then still flagged. The Protection screen shows when a call was last checked. | 1. Looks the number up in the saved list of approved scam numbers (instant, works offline). 2. Otherwise asks `POST /api/check/phone/` (3 s limit). High Concern → warn, silence or block, as the user chose. Caution → warning only; the call still rings. |
 | Incoming SMS | `BroadcastReceiver` for `SMS_RECEIVED`, permission `RECEIVE_SMS`. It receives **new** messages only; `READ_SMS` (the inbox) stays blocked in `app.json`. | Checks the sender against the saved scam number list and sends the text to `POST /api/check/message/`. Caution or High Concern shows a notification with the reason and the safer action, and a *Report number* button. |
 | Message in WhatsApp, email, browser | Android **Share** menu (`ACTION_SEND`, `text/plain`) | The shared text is checked like a pasted message and the result opens in the app. No permission needed. |
 
@@ -61,7 +61,7 @@ a copy of the approved scam numbers so a call can be flagged within Android's 5-
 - Calls: only the caller's number is checked. No audio is recorded.
 - SMS: the text is sent to the backend for checking and never stored there (the check endpoints store nothing, and the
   AI only sees it after phone numbers, emails and codes are removed). The inbox is never read.
-- Optional *Skip messages from my contacts* uses `READ_CONTACTS` only to look up the sender; contacts are never uploaded.
+- Optional *Skip messages from my contacts* (off by default) uses `READ_CONTACTS` only to look up the sender; contacts are never uploaded. It only skips the text check: an SMS from a reported scam number is always flagged, even from a saved contact.
 - The phone keeps a history of the last 50 warnings with the sender, verdict and reason, **not the message text**.
   The user can clear it.
 - A failed check (offline, timeout) shows nothing. It is never reported as safe.

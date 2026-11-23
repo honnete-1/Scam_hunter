@@ -138,3 +138,14 @@ test('a message in Kinyarwanda is explained in Kinyarwanda, with English one tap
   expect(screen.getByText('This message asks for money.')).toBeOnTheScreen();
   expect(screen.getByText('Do not send money.')).toBeOnTheScreen();
 });
+
+test('a listed phone number offers its owner a removal request', async () => {
+  const onRequestRemoval = jest.fn();
+  const result = { ...CAUTION_RESULT, concern_level: 'HIGH_CONCERN' as const, indicators: [], reference_match: true };
+  await render(
+    <ResultView result={result} checkType="PHONE" onReport={jest.fn()} onCheckAnother={jest.fn()} onTryAgain={jest.fn()} onRequestRemoval={onRequestRemoval} />,
+    { wrapper: AppProviders },
+  );
+  await userEvent.press(screen.getByText('My Number Was Reported by Mistake'));
+  expect(onRequestRemoval).toHaveBeenCalled();
+});

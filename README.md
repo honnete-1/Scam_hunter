@@ -28,6 +28,32 @@ python manage.py runserver
 
 Run the tests with `python manage.py test`.
 
+### Database
+
+The website and the Android app share **one database**, always through the Django API (the app never opens
+the database itself). Django reads `DATABASE_URL` from `.env`:
+
+- **PostgreSQL** (used for this project): `DATABASE_URL=postgres://scam_hunter:PASSWORD@localhost:5433/scam_hunter`.
+  Create the database once as the `postgres` user, e.g.
+  `CREATE ROLE scam_hunter LOGIN PASSWORD '...' CREATEDB; CREATE DATABASE scam_hunter OWNER scam_hunter;`
+  (`CREATEDB` lets `manage.py test` create its test database), then run `python manage.py migrate`.
+- **SQLite**: leave `DATABASE_URL` empty and `db.sqlite3` is used. Fine for a quick local try-out.
+
+PostgreSQL is used because moderation locks a report while it is reviewed (`select_for_update`), which SQLite
+ignores, because it handles the website and many phones writing at the same time, and because hosting services
+keep a managed PostgreSQL database while their disk (where `db.sqlite3` would live) is often wiped on redeploy.
+
+To copy existing SQLite data into PostgreSQL:
+
+```bash
+set DATABASE_URL=& python manage.py dumpdata --natural-foreign --natural-primary -e contenttypes -e auth.permission -e sessions -o data.json
+python manage.py migrate
+python manage.py loaddata data.json
+```
+
+Uploaded proof files (removal requests) are saved in `media/` (git-ignored, or `SCAM_HUNTER_MEDIA_ROOT`). No URL
+serves that folder; moderators open a proof only from the admin.
+
 To demo the "check could not be completed" screen, start Django with
 `SIMULATE_REFERENCE_OUTAGE=True` set. Every URL and phone lookup then fails on purpose.
 
@@ -199,8 +225,26 @@ Rwanda mobile numbers are stored as `+2507XXXXXXXX`, so `0788 123 456`, `2507881
 ```
 User submits report -> PENDING -> moderator approves or rejects
                                     APPROVED -> URL / phone reference record created
-                                    REJECTED -> nothing else happens
+                                    REJECTED -> a rejected phone number also leaves the scam list
+APPROVED -> moderator removes it, or accepts the owner's removal request -> REMOVED
 ```
+
+**One number, any format.** Every phone report stores its number in one standard form (`phone_number`, e.g.
+`0783 207 918`, `250783207918` and `+250783207918` all become `+250783207918`). The admin shows it with
+**Times reported**, and searching any format finds all of them.
+
+**Removing a number.** When a moderator rejects a phone report or uses **Remove selected numbers/links from the
+scam list**, `clear_number()` takes the number off the list completely, however many people reported it:
+every approved report of it becomes REMOVED, every pending one is rejected with the same reason, and the
+phone app stops flagging it at its next list update. Each removal is logged in **Scam list removals**. A cleared
+number is not put back by a direct report; new reports of it wait for a moderator, who can still approve them.
+
+**Removal requests.** The owner of a number reported by mistake can ask to be removed (website:
+*Number reported by mistake?*, app: Profile or a flagged number's result). They send their name, a contact, an
+explanation and proof, for example a letter from MTN or Airtel with the company stamp (JPG, PNG or PDF, at most
+5 MB; the file type is checked from its content, not only its name). Only numbers on the list can be requested,
+one pending request per number. Moderators open the proof from **Removal requests** in the admin and choose
+**Accept** (the number is cleared as above) or **Decline**; the owner sees the answer and the moderator's note.
 
 Only `approve_report()` in `reporting/services.py` creates reference records, and the
 reference lookup also ignores any record linked to a report that is not APPROVED.
@@ -211,7 +255,7 @@ or through the API.
 It goes through the same `approve_report()` straight away (the review is saved with no moderator and the reason
 "Direct report"), so the number is flagged for everyone at once. To limit abuse, each account can make 5 direct
 reports per day, and messages and links always need a moderator. If a direct report was wrong, a moderator selects
-it in the admin and uses **Remove selected numbers/links from the scam list** (the record is switched off, history kept).
+it in the admin and uses **Remove selected numbers/links from the scam list** (see above; history is kept).
 
 ## Answers in the message's language
 

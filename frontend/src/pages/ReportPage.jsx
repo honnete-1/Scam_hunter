@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router";
 import { useAuth } from "../auth";
 import ReportForm from "../components/ReportForm";
 
-const STATUS_LABELS = { PENDING: "Pending", APPROVED: "Approved", REJECTED: "Rejected" };
+const STATUS_LABELS = { PENDING: "Pending", APPROVED: "Approved", REJECTED: "Rejected", REMOVED: "Removed from list" };
 
 function Confirmation({ report }) {
   const headingRef = useRef(null);

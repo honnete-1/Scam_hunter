@@ -54,6 +54,7 @@ export default function ResultScreen() {
         onReport={reportThis}
         onCheckAnother={checkAnother}
         onTryAgain={tryAgain}
+        onRequestRemoval={() => router.push({ pathname: '/removal-request', params: { number: lastCheck.content } })}
       />
       {failure ? (
         <ErrorBanner title={failureText.title} detail={failureText.detail} note="This does not mean the content is safe." />

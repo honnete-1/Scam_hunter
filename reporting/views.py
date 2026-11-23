@@ -1,14 +1,15 @@
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import CommunityReport, ReviewMode
+from .models import CommunityReport, RemovalRequest, ReviewMode
 from .serializers import (
     CommunityReportSerializer, CommunityStatsSerializer, DetailSerializer, ModerationInputSerializer, PublicAlertSerializer,
-    ScamNumberListSerializer,
+    RemovalRequestSerializer, ScamNumberListSerializer,
 )
 from .services import (
     ModerationError, approve_report, community_stats, public_alerts, reject_report, scam_number_list, submit_report,
@@ -158,3 +159,39 @@ class ScamNumberListView(APIView):
 
     def get(self, request):
         return Response(scam_number_list())
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Removal requests"],
+        summary="List my removal requests",
+        description="Removal requests sent by the logged-in user, newest first, with the moderator's answer.",
+        responses={200: RemovalRequestSerializer(many=True), 401: OpenApiResponse(DetailSerializer, description="Not logged in.")},
+    ),
+    post=extend_schema(
+        tags=["Removal requests"],
+        summary="Ask to remove a number from the scam list",
+        description=(
+            "For the owner of a number that was reported by mistake. Send it as multipart/form-data with a proof file, "
+            "for example a letter from MTN or Airtel with their stamp (JPG, PNG or PDF, at most 5 MB). The number must be "
+            "on the scam list. A moderator reviews the proof; if accepted, every report of the number (in any format) is "
+            "taken off the list. The proof file is private and only moderators can open it."
+        ),
+        request={"multipart/form-data": RemovalRequestSerializer},
+        responses={
+            201: RemovalRequestSerializer,
+            400: OpenApiResponse(description="Invalid number, number not on the list, or a missing or invalid proof file."),
+            401: OpenApiResponse(DetailSerializer, description="Not logged in."),
+        },
+    ),
+)
+class RemovalRequestListCreateView(generics.ListCreateAPIView):
+    serializer_class = RemovalRequestSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        return RemovalRequest.objects.filter(submitted_by=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(submitted_by=self.request.user)

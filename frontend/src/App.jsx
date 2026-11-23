@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import MobileAppPage from "./pages/MobileAppPage";
 import MyReportsPage from "./pages/MyReportsPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import RemovalRequestPage from "./pages/RemovalRequestPage";
 import ReportPage from "./pages/ReportPage";
 import SignupPage from "./pages/SignupPage";
 
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/mobile" element={<MobileAppPage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/my-reports" element={<MyReportsPage />} />
+          <Route path="/removal-request" element={<RemovalRequestPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<NotFoundPage />} />

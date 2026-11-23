@@ -11,7 +11,10 @@ from checking.reference_repository import approved_only
 from checking.models import PhoneReferenceRecord, ReferenceSource, URLReferenceRecord
 from checking.requests import CheckValidationError, extract_domain, normalize_phone_number, normalize_url
 
-from .models import CommunityReport, ModerationDecision, ModerationReview, ReportStatus, ReportType, ReviewMode
+from .models import (
+    CommunityReport, ModerationDecision, ModerationReview, RemovalRequest, RemovalRequestStatus, ReportStatus, ReportType,
+    ReviewMode, ScamListRemoval,
+)
 
 
 class ModerationError(Exception):
@@ -21,12 +24,16 @@ class ModerationError(Exception):
 # Direct reports skip the moderator, so each account may only make a few per day.
 MAX_DIRECT_REPORTS_PER_DAY = 5
 DIRECT_REPORT_REASON = "Direct report: approved automatically when it was submitted."
+CLEARED_NUMBER_REASON = "The number was taken off the scam list by a moderator."
 
 
 @transaction.atomic
 def submit_report(user, report_type, content, details="", review_mode=ReviewMode.MODERATED):
     # New reports start as PENDING and do nothing until approved. A direct phone report is
-    # approved straight away through the same approve_report() as a moderator would use.
+    # approved straight away through the same approve_report() as a moderator would use,
+    # unless a moderator already cleared that number: then a moderator must look at it again.
+    if review_mode == ReviewMode.DIRECT and report_type == ReportType.PHONE and was_cleared(content):
+        review_mode = ReviewMode.MODERATED
     report = CommunityReport.objects.create(
         submitted_by=user,
         report_type=report_type,
@@ -47,15 +54,94 @@ def direct_reports_today(user):
     return CommunityReport.objects.filter(submitted_by=user, review_mode=ReviewMode.DIRECT, created_at__gte=since).count()
 
 
-def remove_from_scam_list(report):
+def was_cleared(content):
+    # True if a moderator took this number off the scam list and nobody has re-approved it since.
+    try:
+        number = normalize_phone_number(content)
+    except CheckValidationError:
+        return False
+    return PhoneReferenceRecord.objects.filter(phone_number=number, active=False).exists()
+
+
+@transaction.atomic
+def clear_number(phone_number, moderator, reason="", removal_request=None):
+    # Takes a number off the scam list completely, however many times and in whatever format it
+    # was reported: every approved report of it becomes REMOVED, every pending one is rejected,
+    # and the phone app stops flagging it at its next list update. History is kept.
+    number = normalize_phone_number(phone_number)
+    reason = reason or CLEARED_NUMBER_REASON
+    PhoneReferenceRecord.objects.filter(phone_number=number).update(active=False)
+
+    reports = CommunityReport.objects.select_for_update().filter(report_type=ReportType.PHONE, phone_number=number)
+    removed = reports.filter(status=ReportStatus.APPROVED).update(status=ReportStatus.REMOVED, updated_at=timezone.now())
+    rejected = 0
+    for report in reports.filter(status=ReportStatus.PENDING):
+        _record_review(report, moderator, ModerationDecision.REJECTED, reason, ReportStatus.REJECTED)
+        rejected += 1
+
+    return ScamListRemoval.objects.create(
+        phone_number=number, moderator=moderator, reason=reason, removal_request=removal_request,
+        reports_removed=removed, reports_rejected=rejected,
+    )
+
+
+@transaction.atomic
+def remove_from_scam_list(report, moderator=None, reason=""):
     # Lets a moderator undo a wrong report (e.g. a direct one) without deleting any history.
+    # Returns how many reports were taken off the list.
     if report.report_type == ReportType.PHONE:
-        records = PhoneReferenceRecord.objects.filter(phone_number=normalize_phone_number(report.content))
-    elif report.report_type == ReportType.URL:
-        records = URLReferenceRecord.objects.filter(url=normalize_url(report.content))
-    else:
-        return 0
-    return records.update(active=False)
+        removal = clear_number(report.content, moderator, reason)
+        return removal.reports_removed + removal.reports_rejected
+    if report.report_type == ReportType.URL:
+        url = normalize_url(report.content)
+        URLReferenceRecord.objects.filter(url=url).update(active=False)
+        removed = 0
+        for other in CommunityReport.objects.filter(report_type=ReportType.URL, status=ReportStatus.APPROVED):
+            if _same_url(other.content, url):
+                other.status = ReportStatus.REMOVED
+                other.save(update_fields=["status", "updated_at"])
+                removed += 1
+        return removed
+    return 0
+
+
+def _same_url(content, url):
+    try:
+        return normalize_url(content) == url
+    except CheckValidationError:
+        return False
+
+
+@transaction.atomic
+def accept_removal_request(request, moderator, note=""):
+    request = RemovalRequest.objects.select_for_update().get(pk=request.pk)
+    if request.status != RemovalRequestStatus.PENDING:
+        raise ModerationError(f"Removal request #{request.pk} has already been reviewed.")
+    note = note or request.moderator_note or "Your proof was accepted and the number was removed from the scam list."
+    clear_number(request.phone_number, moderator, f"Removal request #{request.pk} accepted: {note}", request)
+    return _close_removal_request(request, moderator, RemovalRequestStatus.ACCEPTED, note)
+
+
+@transaction.atomic
+def decline_removal_request(request, moderator, note=""):
+    request = RemovalRequest.objects.select_for_update().get(pk=request.pk)
+    if request.status != RemovalRequestStatus.PENDING:
+        raise ModerationError(f"Removal request #{request.pk} has already been reviewed.")
+    note = note or request.moderator_note or "The proof was not enough to remove this number from the scam list."
+    return _close_removal_request(request, moderator, RemovalRequestStatus.DECLINED, note)
+
+
+def _close_removal_request(request, moderator, status, note):
+    request.status = status
+    request.moderator = moderator
+    request.moderator_note = note
+    request.reviewed_at = timezone.now()
+    request.save(update_fields=["status", "moderator", "moderator_note", "reviewed_at"])
+    return request
+
+
+def is_on_scam_list(phone_number):
+    return approved_only(PhoneReferenceRecord.objects).filter(phone_number=phone_number).exists()
 
 
 @transaction.atomic
@@ -79,17 +165,19 @@ def approve_report(report, moderator, reason=""):
 @transaction.atomic
 def reject_report(report, moderator, reason=""):
     report = _lock_pending_report(report)
-
-    ModerationReview.objects.create(
-        report=report,
-        moderator=moderator,
-        decision=ModerationDecision.REJECTED,
-        reason=reason or "",
-    )
-    report.status = ReportStatus.REJECTED
-    report.save(update_fields=["status", "updated_at"])
-    # Rejected reports never create a reference record.
+    _record_review(report, moderator, ModerationDecision.REJECTED, reason, ReportStatus.REJECTED)
+    # Rejected reports never create a reference record. Rejecting a phone number also clears it
+    # from the scam list, even if other people reported it too (in any format).
+    if report.report_type == ReportType.PHONE and report.phone_number:
+        clear_number(report.phone_number, moderator, reason)
+        report.refresh_from_db()
     return report
+
+
+def _record_review(report, moderator, decision, reason, status):
+    ModerationReview.objects.create(report=report, moderator=moderator, decision=decision, reason=reason or "")
+    report.status = status
+    report.save(update_fields=["status", "updated_at"])
 
 
 def create_reference_record(report):
@@ -122,10 +210,11 @@ def create_reference_record(report):
 
     if not created:
         # The same URL/number was already known. Instead of creating a duplicate,
-        # make sure it is active again. The original source_report is kept.
+        # make sure it is active again. The original source_report is kept while it is still approved;
+        # if it was removed or rejected, this newly approved report becomes the source.
         record.active = True
         record.approved_at = timezone.now()
-        if record.source_report is None:
+        if record.source_report is None or record.source_report.status != ReportStatus.APPROVED:
             record.source_report = report
         record.save()
     return record
@@ -185,11 +274,7 @@ def scam_number_list():
     # can be checked instantly, even before the network answers.
     counts = {}
     phone_reports = CommunityReport.objects.filter(report_type=ReportType.PHONE, status=ReportStatus.APPROVED)
-    for content in phone_reports.values_list("content", flat=True):
-        try:
-            number = normalize_phone_number(content)
-        except CheckValidationError:
-            continue
+    for number in phone_reports.exclude(phone_number="").values_list("phone_number", flat=True):
         counts[number] = counts.get(number, 0) + 1
 
     records = approved_only(PhoneReferenceRecord.objects).order_by("-approved_at")[:MAX_SCAM_NUMBERS]
