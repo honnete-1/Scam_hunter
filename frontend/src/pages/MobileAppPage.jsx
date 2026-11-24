@@ -55,7 +55,10 @@ export default function MobileAppPage() {
           <h2 id="expo-title" className="section-title">For developers: Expo Go</h2>
           <ol className="steps-list">
             <li>Install <strong>Expo Go</strong> from the Google Play Store.</li>
-            <li>Connect your phone to the <strong>same Wi-Fi</strong> as the computer running Scam Hunter.</li>
+            <li>
+              On the computer, run <code>npx expo start</code> in the <code>mobile</code> folder, and connect your phone
+              to the <strong>same Wi-Fi</strong>.
+            </li>
             <li>Open Expo Go and tap <strong>Scan QR code</strong>, then scan the code below.</li>
           </ol>
           {mobileApp.expoGoUrl ? (
@@ -64,7 +67,9 @@ export default function MobileAppPage() {
               <figcaption className="muted small">{mobileApp.expoGoUrl}</figcaption>
             </figure>
           ) : (
-            <p className="muted small">Start the mobile app on the computer to see its QR code here.</p>
+            <p className="muted small">
+              No Expo Go address is set for this website yet. Set <code>VITE_EXPO_GO_URL</code> when building it.
+            </p>
           )}
           <p className="muted small">Call and SMS protection only work in the installed APK, not in Expo Go.</p>
         </section>

@@ -95,6 +95,19 @@ The current APK talks to your computer (`http://192.168.1.76:8000`). For an app 
    `SCAM_HUNTER_ANDROID_VERSION` to the version (e.g. `1.2.3`), then **Save Changes**. The website's
    download button and QR code now offer that APK.
 
+## 6. Optional: the Expo Go QR code for developers
+
+The **For developers: Expo Go** card on the Mobile App page shows a QR code only when the website is
+built with `VITE_EXPO_GO_URL` (`frontend/.env.local` is not uploaded, so Render does not have it).
+
+1. Start the mobile app on your computer: `cd mobile` then `npx expo start`. It prints an address such as
+   `exp://192.168.1.76:8081`.
+2. On Render: **scam-hunter** > **Environment** > **Add Environment Variable**, key `VITE_EXPO_GO_URL`,
+   value that address, then **Save, rebuild, and deploy**.
+
+The code only opens the app while `npx expo start` is running and the phone is on the same Wi-Fi as that
+computer. If your computer's IP address changes, update the variable and redeploy.
+
 ## Free plan limits
 
 - **Sleeps when idle.** After 15 minutes without visitors the service sleeps; the next visit takes about a

@@ -44,3 +44,7 @@ services:
         sync: false
       - key: SCAM_HUNTER_ANDROID_VERSION
         sync: false
+      # Expo Go address for the "For developers" QR code, e.g. exp://192.168.1.76:8081.
+      # The website is built on Render, so this is read at build time (change it, then redeploy).
+      - key: VITE_EXPO_GO_URL
+        sync: false
