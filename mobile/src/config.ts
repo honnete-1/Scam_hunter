@@ -7,4 +7,5 @@ const fallbackUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http:/
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL || fallbackUrl).replace(/\/+$/, '');
 
 // Give up on a request after this long, so a dead connection doesn't leave the user waiting forever.
-export const REQUEST_TIMEOUT_MS = 20000;
+// 60 s because Render's free server sleeps when idle and takes about a minute to wake up.
+export const REQUEST_TIMEOUT_MS = 60000;

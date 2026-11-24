@@ -9,7 +9,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.1.76:8000"
+        "EXPO_PUBLIC_API_URL": "https://scam-hunter-y1c7.onrender.com"
       }
     }
   }

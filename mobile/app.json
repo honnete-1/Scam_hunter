@@ -2,7 +2,7 @@
   "expo": {
     "name": "Scam Hunter",
     "slug": "scam-hunter",
-    "version": "1.2.2",
+    "version": "1.3.0",
     "scheme": "scamhunter",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -46,7 +46,7 @@
           ]
         }
       ],
-      "versionCode": 5
+      "versionCode": 6
     },
     "web": {
       "favicon": "./assets/favicon.png"
