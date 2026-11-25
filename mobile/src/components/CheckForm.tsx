@@ -5,6 +5,7 @@ import { failureLabel, type FailureType } from '../content/labels';
 import { checkContent } from '../services/api';
 import { spacing } from '../theme/spacing';
 import type { AnalysisResult, CheckType } from '../types/api';
+import { SLOW_SERVER_NOTICE, useSlowNotice } from '../utils/useSlowNotice';
 import AppText from './AppText';
 import { PrimaryButton, TextButton } from './Buttons';
 import CheckTypeSelector from './CheckTypeSelector';
@@ -63,6 +64,7 @@ export default function CheckForm({ initialType = 'MESSAGE', initialContent = ''
   const [fieldError, setFieldError] = useState('');
   const [failure, setFailure] = useState<FailureType | null>(null);
   const [loading, setLoading] = useState(false);
+  const slow = useSlowNotice(loading);
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   const text = FORM_TEXT[type];
@@ -138,7 +140,7 @@ export default function CheckForm({ initialType = 'MESSAGE', initialContent = ''
       <PrimaryButton label={text.button} loading={loading} loadingLabel="Checking..." onPress={submit} />
       {loading ? (
         <AppText variant="small" muted style={styles.status} accessibilityLiveRegion="polite">
-          Reviewing the submitted content.
+          {slow ? SLOW_SERVER_NOTICE : 'Reviewing the submitted content.'}
         </AppText>
       ) : null}
 
