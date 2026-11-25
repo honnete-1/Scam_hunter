@@ -13,6 +13,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { CheckSessionProvider } from '../context/CheckSessionContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { fonts } from '../theme/typography';
+import { useWakeServer } from '../utils/useWakeServer';
 
 // Keep the navy splash screen up only until the fonts are ready (no artificial delay).
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -48,6 +49,8 @@ function AppStack() {
 }
 
 export default function RootLayout() {
+  // Start waking the server first, before the fonts and screens load.
+  useWakeServer();
   const [fontsLoaded, fontError] = useFonts({
     SpaceGrotesk_600SemiBold,
     SpaceGrotesk_700Bold,
