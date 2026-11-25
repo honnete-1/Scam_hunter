@@ -1,302 +1,302 @@
-# Scam Hunter
+# Scam Hunter: Check Before You Act
 
-Scam Hunter helps people check suspicious messages, URLs and phone numbers before
-they click, reply, share private information or send money. It never says something
-is definitely a scam. A check gives one of these concern levels:
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Django](https://img.shields.io/badge/Django-5.2-092E20?logo=django&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![React Native](https://img.shields.io/badge/React_Native-Expo-000020?logo=expo&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Render-4169E1?logo=postgresql&logoColor=white)
+![Tests](https://github.com/honnete-1/Scam_hunter/actions/workflows/tests.yml/badge.svg)
 
-- `HIGH_CONCERN`
-- `CAUTION`
-- `NO_KNOWN_WARNING_SIGNS`
+Scam Hunter helps people in Rwanda check a suspicious **message, link or phone number** before they click,
+reply, share a PIN or send money. Paste what you received and Scam Hunter tells you how concerned to be,
+**why**, and what to do next. It works as a website and as an Android app that can warn you about scam calls
+and SMS as they arrive.
 
-If the reference lookup fails, the result is `CHECK_UNAVAILABLE` instead (never "no warning signs").
-Invalid input gets `INVALID_INPUT` and no concern level.
+**Live website:** [scam-hunter-y1c7.onrender.com](https://scam-hunter-y1c7.onrender.com) &nbsp;|&nbsp;
+**Android app:** [Download the APK](https://github.com/honnete-1/Scam_hunter/releases/tag/v1.3.0) &nbsp;|&nbsp;
+**Video demo:** [Watch the video](PASTE_VIDEO_LINK_HERE) &nbsp;|&nbsp;
+**SRS document:** [Read the SRS](PASTE_SRS_LINK_HERE)
 
-## Try it
+<p align="center">
+  <img src="docs/video-deck/result_mobile.png" alt="A Scam Hunter result: High Concern, with the warning signs it found" width="280">
+</p>
 
-- **Website:** https://scam-hunter-y1c7.onrender.com
-  (free hosting: after 15 minutes without visitors the first page can take about a minute to load).
-- **Android app (APK):** [release v1.3.0](https://github.com/honnete-1/Scam_hunter/releases/tag/v1.3.0), or
-  [download the APK directly](https://github.com/honnete-1/Scam_hunter/releases/download/v1.3.0/ScamHunter-1.3.0.apk).
-  1. Open the link on an Android phone and download `ScamHunter-1.3.0.apk`.
-  2. Open the file and allow **Install unknown apps** when Android asks.
-  3. If Play Protect warns, tap **Install anyway** (it is a test build, not on the Play Store).
-  4. Create an account in the app or log in with an account from the website (both use the same server).
+---
 
-## Backend setup
+## Table of contents
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate          # Windows (use source .venv/bin/activate on macOS/Linux)
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser   # moderator account for /admin/
-python manage.py runserver
-```
+1. [The problem](#the-problem)
+2. [Features](#features)
+3. [How a check works](#how-a-check-works)
+4. [Tech stack](#tech-stack)
+5. [Try it without installing anything](#try-it-without-installing-anything)
+6. [Run it on your own computer](#run-it-on-your-own-computer)
+7. [Running the tests](#running-the-tests)
+8. [Project structure](#project-structure)
+9. [API overview](#api-overview)
+10. [Deployment](#deployment)
+11. [Limitations](#limitations)
+12. [More documentation](#more-documentation)
+13. [Author](#author)
 
-- **API documentation:** http://127.0.0.1:8000/ (ReDoc reference) and http://127.0.0.1:8000/api/docs/ (interactive Swagger UI)
-- OpenAPI schema: http://127.0.0.1:8000/api/schema/
-- Admin (moderators): http://127.0.0.1:8000/admin/
+---
 
-Run the tests with `python manage.py test`.
+## The problem
 
-**Deploying:** see [docs/deploy-render.md](docs/deploy-render.md) (Render, free plan: one web service + one PostgreSQL database).
-Locally `/` shows the API reference; in production the website is served at `/` and the API reference at `/api/`.
+Scam SMS, fake mobile-money messages and scam calls trick people into sending money or sharing their PIN.
+Most people have no quick way to check a message before acting on it, and once the money is sent it is
+usually gone. Scam Hunter gives them a check that takes seconds and explains its answer in plain language.
 
-### Database
+## Features
 
-The website and the Android app share **one database**, always through the Django API (the app never opens
-the database itself). Django reads `DATABASE_URL` from `.env`:
+| Who | What they can do |
+|-----|------------------|
+| **Visitor** (no account) | Check a message, link or phone number. See the result, the warning signs found and a safer next step. Browse recent Scam Alerts. |
+| **Registered user** | Everything a visitor can do, plus report a scam message, link or number and follow the report's status in **My Reports**. |
+| **Number owner** | Ask for their number to be removed if it was reported by mistake, with proof (for example a letter from MTN or Airtel). |
+| **Moderator** | Review reports in the admin dashboard: approve them (the number or link is then flagged for everyone), reject them, or accept and decline removal requests. |
+| **Android user** | All the checks on the phone, scanning a QR code, and **real-time protection**: a warning over the call screen when a known scam number calls, and a warning when a scam SMS arrives. |
 
-- **PostgreSQL** (used for this project): `DATABASE_URL=postgres://scam_hunter:PASSWORD@localhost:5433/scam_hunter`.
-  Create the database once as the `postgres` user, e.g.
-  `CREATE ROLE scam_hunter LOGIN PASSWORD '...' CREATEDB; CREATE DATABASE scam_hunter OWNER scam_hunter;`
-  (`CREATEDB` lets `manage.py test` create its test database), then run `python manage.py migrate`.
-- **SQLite**: leave `DATABASE_URL` empty and `db.sqlite3` is used. Fine for a quick local try-out.
+**Every result is one of three concern levels.** Scam Hunter never says something is *definitely* a scam.
 
-PostgreSQL is used because moderation locks a report while it is reviewed (`select_for_update`), which SQLite
-ignores, because it handles the website and many phones writing at the same time, and because hosting services
-keep a managed PostgreSQL database while their disk (where `db.sqlite3` would live) is often wiped on redeploy.
+| Result | Meaning |
+|--------|---------|
+| **High Concern** | A known scam record, or 3 or more different warning signs |
+| **Caution** | 1 or 2 warning signs |
+| **No Known Warning Signs** | Nothing was found. This does not guarantee the content is safe. |
 
-To copy existing SQLite data into PostgreSQL:
+If a required lookup fails, the result says **Check Unavailable** instead. A failure is never shown as "safe".
 
-```bash
-set DATABASE_URL=& python manage.py dumpdata --natural-foreign --natural-primary -e contenttypes -e auth.permission -e sessions -o data.json
-python manage.py migrate
-python manage.py loaddata data.json
-```
-
-Uploaded proof files (removal requests) are saved in `media/` (git-ignored, or `SCAM_HUNTER_MEDIA_ROOT`). No URL
-serves that folder; moderators open a proof only from the admin.
-
-To demo the "check could not be completed" screen, start Django with
-`SIMULATE_REFERENCE_OUTAGE=True` set. Every URL and phone lookup then fails on purpose.
-
-## Web app (frontend/)
-
-React + Vite. In development Vite forwards `/api` and `/admin` to Django, so run both:
-
-```bash
-cd frontend
-npm install
-npm run dev        # http://localhost:5173
-npm test           # Vitest tests
-```
-
-If Django is not on port 8000, set `BACKEND_URL` first, e.g. `BACKEND_URL=http://127.0.0.1:8765 npm run dev`.
-
-| Path | Page |
-|------|------|
-| `/` | Home: hero, why it matters, checker, how it works, mobile preview, community |
-| `/check` | Message / URL / phone checker (`?type=url` or `?type=phone` opens a tab) |
-| `/how-it-works` | Steps, what each result means, privacy |
-| `/report` | Community report form (login required) |
-| `/my-reports` | The user's own reports and their status |
-| `/login`, `/signup` | Authentication |
-
-Moderators keep using Django Admin (`/admin/`, also linked in the footer).
-
-### Assets and data still needed
-
-These have slots in the code but no files yet. The site hides each slot cleanly until the file exists.
-
-| What | Where to put it |
-|------|-----------------|
-| Photo of a person using a phone (Rwandan everyday context) | `frontend/public/images/rwanda-phone-context.jpg` |
-| Product demo video (open app, paste message, check, result) | `frontend/public/media/scam-hunter-demo.mp4` |
-| Poster frame for the video | `frontend/public/images/scam-hunter-demo-poster.jpg` |
-| Up to 3 verified Rwanda scam statistics with sources | `rwandaStats` in `frontend/src/content.js` |
-
-## Mobile app (mobile/)
-
-React Native with Expo. It calls the same API as the web app and has no detection logic of its own.
-See [mobile/README.md](mobile/README.md) for setup, including which backend address to use on an
-emulator or a real phone (`localhost` on a phone is the phone itself).
-
-Backend settings that only matter for the mobile app:
-
-- `DJANGO_ALLOWED_HOSTS`: extra hosts, e.g. your computer's LAN IP when testing on a phone with Expo Go.
-  `10.0.2.2` (the Android emulator) is allowed automatically in DEBUG.
-- `DJANGO_CORS_ALLOWED_ORIGINS`: only for running the mobile app in a web browser, e.g. `http://localhost:8081`.
-  Native apps don't use CORS.
-
-## Apps
-
-| App | What it does |
-|-----|--------------|
-| `accounts` | Register, login (token), logout, current user. Uses Django's built-in `User`. |
-| `checking` | Check requests, rule engine, reference records and lookup, analysis result, analysis service, check API. |
-| `reporting` | Community reports, moderation reviews, the moderation service and report API. |
+**Also included:**
+- Answers in the message's language (for example Kinyarwanda or French) when the AI check is set up.
+- Rate limits, so one person cannot flood the checks, logins or reports.
+- A "server is waking up" notice when the free hosting is slow to start.
+- Privacy: checked content is never saved, and personal details are removed before anything is sent to the AI service.
 
 ## How a check works
 
 ```
-CheckRequest (MessageCheck / URLCheck / PhoneCheck)
-    -> validate() and normalize()        invalid input stops here
-    -> RuleEngine                         message rules / URL structure rules
-    -> ReferenceRepository                MATCH / NO_MATCH / UNAVAILABLE
-    -> AnalysisResult                     concern level, explanation, safer action
+You paste a message, link or number
+        ↓
+Input is checked and cleaned        (invalid input stops here)
+        ↓
+Scam-pattern rules                  urgency, PIN or code requests, payment requests, false authority...
+        ↓
+Approved scam records               links and numbers confirmed by moderators
+        ↓
+Optional online checks              AI second opinion, Google Safe Browsing, URLhaus, website age
+        ↓
+Result: concern level + why + a safer next step
 ```
 
-Classification rules (`checking/analysis_result.py`):
+The AI can only **add** a warning, never remove one, so a scam message cannot trick it into hiding what the
+rules found. See [docs/technical-details.md](docs/technical-details.md) for the full design.
 
-| Situation | Result |
-|-----------|--------|
-| Reference lookup failed | `CHECK_UNAVAILABLE` |
-| Approved suspicious reference match | `HIGH_CONCERN` |
-| 3+ distinct warning indicators | `HIGH_CONCERN` |
-| 1–2 distinct warning indicators | `CAUTION` |
-| 0 indicators and lookups completed | `NO_KNOWN_WARNING_SIGNS` |
+## Tech stack
 
-Checked content is never saved to the database.
+| Part | Technology |
+|------|------------|
+| Backend and API | Python 3.12, Django 5.2, Django REST Framework, OpenAPI docs (drf-spectacular) |
+| Database | PostgreSQL in production, SQLite for a quick local run |
+| Website | React 19 + Vite |
+| Mobile app | React Native with Expo (TypeScript), Android native module for call and SMS protection |
+| Moderation | Django Admin |
+| Hosting | Render (web service + PostgreSQL), APK on GitHub Releases |
+| Testing and CI | Django tests, Vitest, Jest; GitHub Actions runs all of them on every pull request |
 
-## AI and online checks
+## Try it without installing anything
 
-Besides the rules, every check can use extra layers. Each one that finds something adds **one**
-warning category, so the concern thresholds stay the same (1–2 categories → Caution, 3+ → High Concern).
+### Website
+Open **[scam-hunter-y1c7.onrender.com](https://scam-hunter-y1c7.onrender.com)**.
 
-| Layer | What it does | Needs |
-|-------|--------------|-------|
-| Approved records | Links inside messages are also matched against approved URL records | – |
-| Community reports | A message very similar to an approved scam message counts as `similar_to_reported`; phone results show how many approved reports name the number | – |
-| AI second opinion | An open model (`openai/gpt-oss-20b` on Groq's free tier by default) rates messages; at 70%+ confidence it adds `ai_assessment` | `SCAM_HUNTER_AI_API_KEY` |
-| Google Safe Browsing | Links listed as phishing or malware add `known_malicious_link` | `GOOGLE_SAFE_BROWSING_API_KEY` |
-| URLhaus | Websites hosting known malware links add `known_malicious_link` | `URLHAUS_AUTH_KEY` |
-| Website age (RDAP) | Websites registered less than 30 days ago add `new_domain` | – |
+> The free hosting plan sleeps after 15 minutes without visitors. The first page can take **up to a minute**
+> to load. After that it is fast.
 
-Setup: copy `.env.example` to `.env` next to `manage.py` and add the keys you have, then restart Django.
-`.env` is git-ignored, so never commit it. Missing keys are fine: those checks show as "Not set up".
+Paste this example on the **Check** page to see a High Concern result:
 
-Rules that keep these layers safe:
+```
+URGENT: Your MoMo account will be suspended today. Reply with your PIN and send 5,000 RWF to reactivate it.
+```
 
-- **The AI can only add a warning, never remove one.** A scam message that tries to trick the AI cannot hide what the rules found.
-- **Privacy:** phone numbers, emails and codes are removed from the text before it is sent to the AI service.
-  Results list every check under "How we checked", including any that could not run.
-- **Only the reference lookup is required.** If an optional online check fails, the result still appears and says
-  "Some online checks could not run". The AI and other online services can never turn a result into "safe".
-- Online checks are switched off automatically while tests run.
+### Android app
+1. On an Android phone, open the [v1.3.0 release](https://github.com/honnete-1/Scam_hunter/releases/tag/v1.3.0)
+   and tap **ScamHunter-1.3.0.apk** to download it
+   ([direct download link](https://github.com/honnete-1/Scam_hunter/releases/download/v1.3.0/ScamHunter-1.3.0.apk)).
+2. Open the downloaded file. When Android asks, allow **Install unknown apps** for your browser.
+3. If Play Protect warns you, tap **More details**, then **Install anyway**. The app is not on the Play Store yet, so Android doesn't recognise it.
+   If Android says *App blocked to protect your device* with no way to continue, follow
+   [Installing it when Android blocks it](mobile/README.md#installing-it-when-android-blocks-it).
+4. Open Scam Hunter. Sign up, or log in with an account you made on the website, since both use the same server.
+5. To get warnings during calls and SMS, go to **Profile**, open **Real-time Protection** and allow the permissions it asks for.
 
-Message results also include `ai_score`: the AI model's own scam-likelihood estimate (0–100), or `null`
-when the AI did not run. The web and mobile apps show it as "AI scam-likelihood score". It is a second
-opinion only: the concern level still comes from the rules above, and no number is ever made up.
+## Run it on your own computer
 
-The web app's **Architecture** page (`/architecture`) shows the system diagram and the measured detection rates.
+### What you need
+- [Python 3.12](https://www.python.org/downloads/)
+- [Node.js 22](https://nodejs.org/) (includes npm)
+- [Git](https://git-scm.com/downloads)
 
-Measure the effect of the AI on the evaluation sets (uses your free quota slowly, about 30 messages a minute):
+No API keys and no database server are needed. Without them, the project uses a local SQLite file and
+skips the optional online checks.
+
+### Step 1: Download the code
 
 ```bash
-python manage.py evaluate_detector --online
+git clone https://github.com/honnete-1/Scam_hunter.git
+cd Scam_hunter
 ```
 
-Public community API: `GET /api/reports/alerts/` (recent approved reports, with personal details hidden),
-`GET /api/reports/stats/` (real counts), shown on the web app's **Scam Alerts** page, and
-`GET /api/reports/scam-numbers/` (approved scam numbers, downloaded by the Android app).
+### Step 2: Start the backend (API and admin)
 
-The Android app has **real-time protection** like a caller-ID app: it warns about (or silences/blocks) scam
-calls before you answer and flags scam SMS as they arrive. See
-[docs/realtime-protection.md](docs/realtime-protection.md).
+**Windows**
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-## Message detector and its limits
+**macOS / Linux**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
 
-The message detector (`MESSAGE_RULES` in `checking/rule_engine.py`) is rule-based, not machine
-learning. Each of the six categories looks for a **behaviour**: an action combined with what it is
-about, such as "send/reply with" + "OTP", "pay/transfer" + "RWF/MoMo", or "this is/calling from" +
-"MTN Customer Care". A single word like "password", "MTN" or "congratulations" is not enough.
-Advice such as "never share your PIN" or "do not send money" is skipped on purpose.
+- `createsuperuser` makes your **moderator** account. Choose a username and password when it asks.
+- If PowerShell refuses to run `activate`, use Command Prompt instead, or run
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
 
-Only the first match in each category counts, so repeating urgent words cannot push a message to
-High Concern by itself.
+Leave this terminal running. Now you can open:
 
-Things to keep in mind:
+| Address | What it is |
+|---------|------------|
+| http://127.0.0.1:8000/api/docs/ | Interactive API documentation (try every endpoint) |
+| http://127.0.0.1:8000/admin/ | Moderator dashboard (log in with the superuser you created) |
 
-- It only detects the scam-like behaviours it has rules for. New or unusual wording can be missed.
-- Results are advice, not proof. A flagged message may be genuine, and an unflagged one may still be a scam.
-- `NO_KNOWN_WARNING_SIGNS` never means the content is guaranteed to be safe.
-- Rules can be added over time. Re-run the evaluation after every change:
+### Step 3: Start the website
+
+Open a **second** terminal in the `Scam_hunter` folder:
 
 ```bash
-python manage.py evaluate_detector        # add -v 2 to see every result
+cd frontend
+npm install
+npm run dev
 ```
 
-The evaluation sets are in `checking/evaluation/dataset.py`:
+Open **http://localhost:5173**. The website sends its requests to the backend from Step 2, so keep both running.
 
-| Set | Size | How it was used |
-|-----|------|-----------------|
-| main | 30 suspicious + 30 legitimate | Used while refining the rules |
-| holdout | 15 + 15 | Written later; its misses were then used to fix gaps, so it is no longer unseen |
-| challenge | 20 + 20 | Written after the final rule changes and run once without tuning |
+### Step 4 (optional): Run the mobile app from source
 
-The challenge set is the most honest measure of new wording: 60.0% of suspicious messages were
-flagged and 5.0% of legitimate ones (Stage 2.5 final pass). Its misses mostly use `-ing` verbs
-("by entering your password"), dropped subjects ("need 50k urgently") or synonyms the rules do not
-know ("picked as winner", "reverse it to me"). `checking/tests/test_evaluation.py` fails if the
-main or holdout results drop below 80% detection or rise above 20% false positives.
+The easiest way to see the app is the APK above. To run it from the code with Expo Go, follow
+[mobile/README.md](mobile/README.md). It explains which backend address to use for an emulator or a real phone.
 
-Rwanda mobile numbers are stored as `+2507XXXXXXXX`, so `0788 123 456`, `250788123456` and
-`+250 788 123 456` all match the same phone reference record. Other countries' numbers are not changed.
+### Step 5 (optional): Turn on the AI and online checks
 
-## Community reports
+1. Copy the example settings file: `copy .env.example .env` (Windows) or `cp .env.example .env` (macOS/Linux).
+2. Open `.env` and add the keys you have. Each one is free and optional:
+
+   | Setting | Turns on | Get a key |
+   |---------|----------|-----------|
+   | `SCAM_HUNTER_AI_API_KEY` | AI second opinion and translated answers | https://console.groq.com/keys |
+   | `GOOGLE_SAFE_BROWSING_API_KEY` | Known phishing and malware links | https://developers.google.com/safe-browsing/v4/get-started |
+   | `URLHAUS_AUTH_KEY` | Known malware websites | https://auth.abuse.ch/ |
+
+3. Restart the backend (`Ctrl+C`, then `python manage.py runserver`).
+
+Never commit `.env`. It is already git-ignored.
+
+## Running the tests
+
+With the backend's virtual environment active, from the `Scam_hunter` folder:
+
+```bash
+python manage.py test        # backend: about 200 tests
+
+cd frontend
+npm test                     # website
+cd ..
+
+cd mobile
+npm install
+npm test                     # mobile app
+cd ..
+```
+
+GitHub Actions runs all three on every pull request ([tests.yml](.github/workflows/tests.yml)).
+
+To measure how well the message detector works on its evaluation sets:
+
+```bash
+python manage.py evaluate_detector
+```
+
+## Project structure
 
 ```
-User submits report -> PENDING -> moderator approves or rejects
-                                    APPROVED -> URL / phone reference record created
-                                    REJECTED -> a rejected phone number also leaves the scam list
-APPROVED -> moderator removes it, or accepts the owner's removal request -> REMOVED
+Scam_hunter/
+├── accounts/        Sign up, log in, log out (token authentication)
+├── checking/        The checking pipeline: rules, scam records, AI and online checks, results
+├── reporting/       Community reports, moderation, removal requests, scam alerts
+├── config/          Django settings, URLs, rate limits, health check
+├── frontend/        React website
+├── mobile/          React Native (Expo) Android app
+├── docs/            Deployment guide, real-time protection, technical details
+├── .github/         GitHub Actions: runs every test on each pull request
+├── render.yaml      Render deployment blueprint
+└── requirements.txt Python packages
 ```
 
-**One number, any format.** Every phone report stores its number in one standard form (`phone_number`, e.g.
-`0783 207 918`, `250783207918` and `+250783207918` all become `+250783207918`). The admin shows it with
-**Times reported**, and searching any format finds all of them.
+## API overview
 
-**Removing a number.** When a moderator rejects a phone report or uses **Remove selected numbers/links from the
-scam list**, `clear_number()` takes the number off the list completely, however many people reported it:
-every approved report of it becomes REMOVED, every pending one is rejected with the same reason, and the
-phone app stops flagging it at its next list update. Each removal is logged in **Scam list removals**. A cleared
-number is not put back by a direct report; new reports of it wait for a moderator, who can still approve them.
+Full interactive documentation: [/api/docs/](https://scam-hunter-y1c7.onrender.com/api/docs/) on the live site.
 
-**Removal requests.** The owner of a number reported by mistake can ask to be removed (website:
-*Number reported by mistake?*, app: Profile or a flagged number's result). They send their name, a contact, an
-explanation and proof, for example a letter from MTN or Airtel with the company stamp (JPG, PNG or PDF, at most
-5 MB; the file type is checked from its content, not only its name). Only numbers on the list can be requested,
-one pending request per number. Moderators open the proof from **Removal requests** in the admin and choose
-**Accept** (the number is cleared as above) or **Decline**; the owner sees the answer and the moderator's note.
+| Method | Endpoint | Login needed |
+|--------|----------|--------------|
+| POST | `/api/check/message/` `{"message": "..."}` | No |
+| POST | `/api/check/url/` `{"url": "..."}` | No |
+| POST | `/api/check/phone/` `{"phone_number": "..."}` | No |
+| POST | `/api/accounts/register/`, `/api/accounts/login/` | No (login returns a token) |
+| POST | `/api/accounts/logout/` · GET `/api/accounts/me/` | Yes |
+| GET / POST | `/api/reports/` (your reports / submit a report) | Yes |
+| POST | `/api/reports/<id>/approve/`, `/api/reports/<id>/reject/` | Moderator |
+| GET | `/api/reports/alerts/`, `/api/reports/stats/` | No |
+| GET | `/api/reports/scam-numbers/` (list used by the Android app) | No |
+| GET | `/api/health/` (wakes the server) | No |
 
-Only `approve_report()` in `reporting/services.py` creates reference records, and the
-reference lookup also ignores any record linked to a report that is not APPROVED.
-Moderators can approve/reject from the admin (actions on the Community Reports list)
-or through the API.
+Send the token as `Authorization: Token <key>`. Too many requests in a short time return **429** with a
+message saying how long to wait.
 
-**Direct reports.** A logged-in user can report a *phone number* with `"review_mode": "DIRECT"`.
-It goes through the same `approve_report()` straight away (the review is saved with no moderator and the reason
-"Direct report"), so the number is flagged for everyone at once. To limit abuse, each account can make 5 direct
-reports per day, and messages and links always need a moderator. If a direct report was wrong, a moderator selects
-it in the admin and uses **Remove selected numbers/links from the scam list** (see above; history is kept).
+## Deployment
 
-## Answers in the message's language
+The live version runs on Render's free plan: one web service serves the website, the API and the admin, and
+one PostgreSQL database stores the data. Step-by-step guide: [docs/deploy-render.md](docs/deploy-render.md).
 
-When a message is not in English (e.g. Kinyarwanda, French, Swahili), the AI check also reports its language.
-The backend then translates its own headline, explanation, safer action and warning-sign explanations into that
-language (`checking/translator.py`) and keeps the English in `english`. Only Scam Hunter's explanation text is sent
-for translation, never the user's message. If the AI is not set up or the translation fails, the answer stays in English.
-The rules themselves only know English phrases, so a non-English scam is currently flagged by the AI (Caution) rather
-than by the rules.
+## Limitations
 
-## API
+- The rules recognise scam behaviour they have patterns for. New or unusual wording can be missed.
+- A result is advice, not proof. **No Known Warning Signs** never means guaranteed safe.
+- The rules only understand English. Other languages rely on the AI check, which needs an API key.
+- Real-time call and SMS protection works on Android only.
+- The free server sleeps when idle, so the first request can take about a minute.
 
-| Method | Endpoint | Auth |
-|--------|----------|------|
-| POST | `/api/accounts/register/` | – |
-| POST | `/api/accounts/login/` | – (returns a token) |
-| POST | `/api/accounts/logout/` | token |
-| GET | `/api/accounts/me/` | token |
-| POST | `/api/check/message/` `{"message": "..."}` | – |
-| POST | `/api/check/url/` `{"url": "..."}` | – |
-| POST | `/api/check/phone/` `{"phone_number": "..."}` | – |
-| GET/POST | `/api/reports/` `{"report_type": "MESSAGE"/"URL"/"PHONE", "content": "...", "details": "..."}` | token |
-| POST | `/api/reports/<id>/approve/` `{"reason": "..."}` | staff |
-| POST | `/api/reports/<id>/reject/` `{"reason": "..."}` | staff |
-| GET | `/api/reports/scam-numbers/` (approved scam numbers for the Android app) | – |
-| GET | `/api/app/android/` (newest published APK link and version) | – |
+## More documentation
 
-`POST /api/reports/` also accepts `"review_mode": "DIRECT"` for phone numbers (see Community reports).
+| Document | What's in it |
+|----------|--------------|
+| [docs/technical-details.md](docs/technical-details.md) | Database, checking pipeline, AI layers, detector accuracy, moderation rules |
+| [docs/realtime-protection.md](docs/realtime-protection.md) | How the Android call and SMS warnings work |
+| [docs/deploy-render.md](docs/deploy-render.md) | Deploying to Render |
+| [mobile/README.md](mobile/README.md) | Running and building the mobile app |
+| [config/api_description.md](config/api_description.md) | API rules and error codes |
 
-Send the token as `Authorization: Token <key>`.
+## Author
+
+**Honnete Nishimwe** ([@honnete-1](https://github.com/honnete-1))
+
+Software Engineering project, November 2026.
