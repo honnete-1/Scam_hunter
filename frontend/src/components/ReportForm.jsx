@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NETWORK_ERROR, SERVER_ERROR, firstError, submitReport } from "../api";
+import { failureMessage, firstError, submitReport } from "../api";
 import { useAuth } from "../auth";
 import FormField, { describedBy } from "./FormField";
 
@@ -62,7 +62,7 @@ export default function ReportForm({ draft, onSubmitted }) {
       // The saved login is no longer valid, so the page will ask the user to log in again.
       forgetUser();
     } else {
-      setFormError(res.kind === "network" ? NETWORK_ERROR : SERVER_ERROR);
+      setFormError(failureMessage(res.kind));
     }
   }
 

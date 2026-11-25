@@ -1,4 +1,5 @@
 import { checkContent, setAuthToken, submitReport } from '../src/services/api';
+import { failureLabel } from '../src/content/labels';
 import { CAUTION_RESULT, UNAVAILABLE_RESULT, mockFetch } from '../test-utils/helpers';
 
 afterEach(() => setAuthToken(null));
@@ -28,6 +29,13 @@ describe('checkContent', () => {
   test('keeps a network failure separate from CHECK_UNAVAILABLE', async () => {
     mockFetch(new TypeError('Network request failed'));
     expect(await checkContent('MESSAGE', 'hello')).toEqual({ kind: 'network' });
+  });
+
+  test('says to wait when too many checks were sent (HTTP 429)', async () => {
+    mockFetch({ status: 429, body: { detail: 'Too many requests. Please wait 42 seconds and try again.' } });
+    const outcome = await checkContent('MESSAGE', 'hello');
+    expect(outcome).toEqual({ kind: 'rateLimited' });
+    expect(failureLabel('rateLimited').title).toBe('Too many requests.');
   });
 
   test('never passes server error pages through', async () => {

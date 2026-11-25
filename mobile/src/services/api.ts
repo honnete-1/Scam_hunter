@@ -3,7 +3,7 @@ import { API_URL, REQUEST_TIMEOUT_MS } from '../config';
 import type { AnalysisResult, CheckType, CommunityReport, RemovalRequest, ReviewMode, ScamNumberList, User } from '../types/api';
 
 // "kind" says what went wrong without exposing server details to the user.
-export type FailureKind = 'network' | 'validation' | 'auth' | 'server';
+export type FailureKind = 'network' | 'validation' | 'auth' | 'rateLimited' | 'server';
 
 export type ApiResponse<T> =
   | { ok: true; status: number; data: T }
@@ -53,6 +53,7 @@ async function request<T>(path: string, options: { method?: string; body?: objec
   let kind: FailureKind = 'server';
   if (response.status === 400) kind = 'validation';
   else if (response.status === 401 || response.status === 403) kind = 'auth';
+  else if (response.status === 429) kind = 'rateLimited';
   return { ok: false, status: response.status, kind, data };
 }
 
@@ -67,6 +68,7 @@ export type CheckOutcome =
   | { kind: 'result'; result: AnalysisResult }
   | { kind: 'fieldError'; message: string }
   | { kind: 'network' }
+  | { kind: 'rateLimited' }
   | { kind: 'server' };
 
 const CHECK_ENDPOINTS: Record<CheckType, { path: string; field: string }> = {
@@ -86,7 +88,7 @@ export async function checkContent(type: CheckType, value: string): Promise<Chec
   if (res.kind === 'validation') {
     return { kind: 'fieldError', message: firstError(res.data?.errors?.[field]) || 'Please check what you entered.' };
   }
-  if (res.kind === 'network') return { kind: 'network' };
+  if (res.kind === 'network' || res.kind === 'rateLimited') return { kind: res.kind };
   return { kind: 'server' };
 }
 

@@ -1,7 +1,7 @@
 import { useRef, useState, type ComponentRef } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
+import { failureLabel, type FailureType } from '../content/labels';
 import { checkContent } from '../services/api';
 import { spacing } from '../theme/spacing';
 import type { AnalysisResult, CheckType } from '../types/api';
@@ -61,7 +61,7 @@ export default function CheckForm({ initialType = 'MESSAGE', initialContent = ''
   // Each type keeps its own text so switching back and forth doesn't lose it.
   const [values, setValues] = useState<Record<CheckType, string>>(() => ({ MESSAGE: '', URL: '', PHONE: '', [initialType]: initialContent }));
   const [fieldError, setFieldError] = useState('');
-  const [failure, setFailure] = useState<'network' | 'server' | null>(null);
+  const [failure, setFailure] = useState<FailureType | null>(null);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
@@ -106,7 +106,7 @@ export default function CheckForm({ initialType = 'MESSAGE', initialContent = ''
     else setFailure(outcome.kind);
   }
 
-  const failureText = failure === 'network' ? NETWORK_ERROR : SERVER_ERROR;
+  const failureText = failureLabel(failure);
 
   return (
     <View>

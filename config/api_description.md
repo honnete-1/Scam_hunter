@@ -57,6 +57,7 @@ Authorization: Token <your token>
 | 401 | Missing or invalid token | `{"detail": "..."}` |
 | 403 | Logged in but not allowed (e.g. moderation without staff rights) | `{"detail": "..."}` |
 | 409 | A report has already been reviewed | `{"detail": "..."}` |
+| 429 | Too many requests from one person (checks 30/min, login 10/min, sign-ups 10/h, reports 10/h, removal requests 5/h) | `{"detail": "Too many requests. Please wait 42 seconds and try again."}` |
 | 503 | A required reference lookup failed | A normal result with `"status": "CHECK_UNAVAILABLE"` |
 
 ## Privacy

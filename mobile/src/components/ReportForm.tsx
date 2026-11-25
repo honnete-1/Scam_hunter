@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
+import { failureLabel, toFailure, type FailureType } from '../content/labels';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { firstError, submitReport } from '../services/api';
@@ -47,7 +47,7 @@ export default function ReportForm({ draft, onSubmitted }: Props) {
   const [reviewMode, setReviewMode] = useState<ReviewMode>('MODERATED');
   const [understood, setUnderstood] = useState(false);
   const [errors, setErrors] = useState<{ content?: string; details?: string; understood?: string }>({});
-  const [failure, setFailure] = useState<'network' | 'server' | null>(null);
+  const [failure, setFailure] = useState<FailureType | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
@@ -77,10 +77,10 @@ export default function ReportForm({ draft, onSubmitted }: Props) {
     } else if (res.kind === 'auth') {
       // The saved login is no longer valid, so the screen will ask the user to log in again.
       await forgetUser();
-    } else setFailure(res.kind === 'network' ? 'network' : 'server');
+    } else setFailure(toFailure(res.kind));
   }
 
-  const failureText = failure === 'network' ? NETWORK_ERROR : SERVER_ERROR;
+  const failureText = failureLabel(failure);
   const direct = reportType === 'PHONE' && reviewMode === 'DIRECT';
   const consentText = direct
     ? 'I understand that this report will be stored and the number will be flagged for everyone straight away.'

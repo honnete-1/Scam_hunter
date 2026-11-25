@@ -3,7 +3,7 @@ import { Redirect, router } from 'expo-router';
 import ErrorBanner from '../components/ErrorBanner';
 import ResultView from '../components/ResultView';
 import Screen from '../components/Screen';
-import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
+import { failureLabel, toFailure, type FailureType } from '../content/labels';
 import { useCheckSession } from '../context/CheckSessionContext';
 import { checkContent } from '../services/api';
 import { resultFeedback } from '../services/feedback';
@@ -11,7 +11,7 @@ import { resultFeedback } from '../services/feedback';
 export default function ResultScreen() {
   const { lastCheck, setLastCheck, setReportDraft } = useCheckSession();
   const [retrying, setRetrying] = useState(false);
-  const [failure, setFailure] = useState<'network' | 'server' | null>(null);
+  const [failure, setFailure] = useState<FailureType | null>(null);
 
   useEffect(() => {
     if (lastCheck) resultFeedback(lastCheck.result);
@@ -27,7 +27,7 @@ export default function ResultScreen() {
     const outcome = await checkContent(lastCheck.type, lastCheck.content);
     setRetrying(false);
     if (outcome.kind === 'result') setLastCheck({ ...lastCheck, result: outcome.result });
-    else setFailure(outcome.kind === 'network' ? 'network' : 'server');
+    else setFailure(toFailure(outcome.kind));
   }
 
   function checkAnother() {
@@ -43,7 +43,7 @@ export default function ResultScreen() {
     router.push('/report');
   }
 
-  const failureText = failure === 'network' ? NETWORK_ERROR : SERVER_ERROR;
+  const failureText = failureLabel(failure);
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>

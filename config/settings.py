@@ -2,6 +2,7 @@
 
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -242,6 +243,33 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Rate limits (see config/throttling.py). Views without a throttle_scope are not limited.
+    'DEFAULT_THROTTLE_CLASSES': ['config.throttling.ScamHunterRateThrottle'],
+    'EXCEPTION_HANDLER': 'config.throttling.exception_handler',
+}
+
+# How many requests one person can send: per account when logged in, per IP address otherwise.
+# Far above normal use. Off while tests run, so the many test requests don't trip them;
+# the rate-limit tests switch them on themselves.
+SCAM_HUNTER_RATE_LIMITS = {} if RUNNING_TESTS else {
+    'check': '30/minute',     # message, link and phone checks
+    'login': '10/minute',     # slows down password guessing
+    'register': '10/hour',
+    'report': '10/hour',      # community reports
+    'removal': '5/hour',      # "my number was reported by mistake" requests
+}
+
+# The rate-limit counts live in a small folder of files, so both server workers share them.
+CACHES = {
+    'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'},
+    'rate_limits': (
+        {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'rate-limit-tests'}
+        if RUNNING_TESTS else
+        {
+            'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': os.path.join(tempfile.gettempdir(), 'scam_hunter_rate_limits'),
+        }
+    ),
 }
 
 # API documentation, served at / (ReDoc) and /api/docs/ (interactive Swagger UI).

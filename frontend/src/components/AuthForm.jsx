@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation } from "react-router";
-import { NETWORK_ERROR, SERVER_ERROR, firstError } from "../api";
+import { failureMessage, firstError } from "../api";
 import { useAuth } from "../auth";
 import FormField, { describedBy } from "./FormField";
 
@@ -70,7 +70,7 @@ export default function AuthForm({ mode }) {
     } else if (res.kind === "auth") {
       setFormError("That username and password don't match. Please try again.");
     } else {
-      setFormError(res.kind === "network" ? NETWORK_ERROR : SERVER_ERROR);
+      setFormError(failureMessage(res.kind));
     }
   }
 

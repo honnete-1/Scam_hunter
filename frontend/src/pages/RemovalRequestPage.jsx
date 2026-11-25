@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { NETWORK_ERROR, SERVER_ERROR, firstError, getMyRemovalRequests, sendRemovalRequest } from "../api";
+import { failureMessage, firstError, getMyRemovalRequests, sendRemovalRequest } from "../api";
 import { useAuth } from "../auth";
 import FormField, { describedBy } from "../components/FormField";
 
@@ -109,7 +109,7 @@ function RemovalForm({ initialNumber, onSent }) {
     } else if (res.kind === "auth") {
       forgetUser();
     } else {
-      setFormError(res.kind === "network" ? NETWORK_ERROR : SERVER_ERROR);
+      setFormError(failureMessage(res.kind));
     }
   }
 
