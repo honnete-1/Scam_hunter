@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NETWORK_ERROR, SERVER_ERROR, checkContent, saveToken } from "../api";
+import { NETWORK_ERROR, RATE_LIMIT_ERROR, SERVER_ERROR, checkContent, saveToken } from "../api";
 import { CAUTION_RESULT, mockFetch } from "./helpers";
 
 describe("checkContent", () => {
@@ -34,6 +34,11 @@ describe("checkContent", () => {
   it("returns a friendly message when the network fails", async () => {
     mockFetch(new TypeError("Failed to fetch"));
     expect(await checkContent("MESSAGE", "hello")).toEqual({ error: NETWORK_ERROR });
+  });
+
+  it("says to wait when too many checks were sent", async () => {
+    mockFetch({ status: 429, body: { detail: "Too many requests. Please wait 42 seconds and try again." } });
+    expect(await checkContent("MESSAGE", "hello")).toEqual({ error: RATE_LIMIT_ERROR });
   });
 
   it("never passes server error pages to the user", async () => {

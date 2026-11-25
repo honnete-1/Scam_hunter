@@ -7,7 +7,7 @@ import { PrimaryButton, SecondaryButton } from '../components/Buttons';
 import FormField from '../components/FormField';
 import Screen from '../components/Screen';
 import StatusBadge from '../components/StatusBadge';
-import { NETWORK_ERROR, SERVER_ERROR, removalStatusLabels } from '../content/labels';
+import { failureLabel, toFailure, type FailureType, removalStatusLabels } from '../content/labels';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { firstError, getMyRemovalRequests, sendRemovalRequest, type ProofFile } from '../services/api';
@@ -29,7 +29,7 @@ export default function RemovalRequestScreen() {
   const [explanation, setExplanation] = useState('');
   const [proof, setProof] = useState<ProofFile | null>(null);
   const [errors, setErrors] = useState<Errors>({});
-  const [failure, setFailure] = useState<'network' | 'server' | null>(null);
+  const [failure, setFailure] = useState<FailureType | null>(null);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState<RemovalRequest | null>(null);
   const [requests, setRequests] = useState<RemovalRequest[]>([]);
@@ -83,7 +83,7 @@ export default function RemovalRequestScreen() {
       });
     } else if (res.kind === 'auth') {
       await forgetUser();
-    } else setFailure(res.kind === 'network' ? 'network' : 'server');
+    } else setFailure(toFailure(res.kind));
   }
 
   let body;
@@ -112,7 +112,7 @@ export default function RemovalRequestScreen() {
       </View>
     );
   } else {
-    const failureText = failure === 'network' ? NETWORK_ERROR : SERVER_ERROR;
+    const failureText = failureLabel(failure);
     body = (
       <View>
         <FormField

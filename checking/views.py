@@ -94,6 +94,7 @@ def check_docs(summary, description, request_serializer, field, request_example,
 class BaseCheckView(APIView):
     # Anyone can check content without an account. Nothing sent here is saved.
     permission_classes = [AllowAny]
+    throttle_scope = "check"
     input_serializer = None
     field_name = None
     check_class = None

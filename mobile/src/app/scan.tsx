@@ -6,7 +6,7 @@ import AppText from '../components/AppText';
 import { PrimaryButton, TextButton } from '../components/Buttons';
 import ErrorBanner from '../components/ErrorBanner';
 import Screen from '../components/Screen';
-import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
+import { failureLabel, type FailureType } from '../content/labels';
 import { useCheckSession } from '../context/CheckSessionContext';
 import { useTheme } from '../context/ThemeContext';
 import { checkContent } from '../services/api';
@@ -21,7 +21,7 @@ export default function ScanScreen() {
   const { setLastCheck } = useCheckSession();
   const [permission, requestPermission] = useCameraPermissions();
   const [checking, setChecking] = useState(false);
-  const [failure, setFailure] = useState<'network' | 'server' | null>(null);
+  const [failure, setFailure] = useState<FailureType | null>(null);
   // The camera reports the same code many times a second; only the first one counts.
   const handled = useRef(false);
 
@@ -77,7 +77,7 @@ export default function ScanScreen() {
     );
   }
 
-  const failureText = failure === 'network' ? NETWORK_ERROR : SERVER_ERROR;
+  const failureText = failureLabel(failure);
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>

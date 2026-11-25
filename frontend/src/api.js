@@ -4,6 +4,14 @@ const TOKEN_KEY = "scamHunterToken";
 
 export const NETWORK_ERROR = "We couldn't reach Scam Hunter. Check your connection and try again.";
 export const SERVER_ERROR = "Something went wrong on our side. Please try again in a moment.";
+export const RATE_LIMIT_ERROR = "Too many requests. Please wait a minute and try again.";
+
+// The message to show for a failed request that has no field errors.
+export function failureMessage(kind) {
+  if (kind === "network") return NETWORK_ERROR;
+  if (kind === "rateLimited") return RATE_LIMIT_ERROR;
+  return SERVER_ERROR;
+}
 
 export function getToken() {
   try {
@@ -61,6 +69,7 @@ async function request(path, { method = "GET", body } = {}) {
   let kind = "server";
   if (response.status === 400) kind = "validation";
   else if (response.status === 401 || response.status === 403) kind = "auth";
+  else if (response.status === 429) kind = "rateLimited";
   else if (response.status === 503 && data?.status === "CHECK_UNAVAILABLE") kind = "unavailable";
   return { ok: false, status: response.status, kind, data };
 }
@@ -89,8 +98,7 @@ export async function checkContent(type, value) {
   if (res.kind === "validation") {
     return { fieldError: firstError(res.data?.errors?.[field]) || "Please check what you entered." };
   }
-  if (res.kind === "network") return { error: NETWORK_ERROR };
-  return { error: SERVER_ERROR };
+  return { error: failureMessage(res.kind) };
 }
 
 export function register({ username, email, password }) {

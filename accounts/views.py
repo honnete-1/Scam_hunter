@@ -23,6 +23,7 @@ class RegisterView(generics.CreateAPIView):
     # Signing up needs no account, so an old or unknown token sent by the app is ignored
     # instead of failing with "Invalid token".
     authentication_classes = []
+    throttle_scope = "register"
 
 
 @extend_schema(
@@ -37,6 +38,7 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
     # Logging in needs no account, so an old token (e.g. from another server) is ignored.
     authentication_classes = []
+    throttle_scope = "login"
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)

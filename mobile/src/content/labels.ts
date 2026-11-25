@@ -70,6 +70,24 @@ export const SERVER_ERROR = {
   detail: 'Please try again in a moment.',
 };
 
+export const RATE_LIMIT_ERROR = {
+  title: 'Too many requests.',
+  detail: 'Please wait a minute and try again.',
+};
+
+// What went wrong with a request that has no field errors, and the message for it.
+export type FailureType = 'network' | 'server' | 'rateLimited';
+
+export function toFailure(kind: string): FailureType {
+  return kind === 'network' || kind === 'rateLimited' ? kind : 'server';
+}
+
+export function failureLabel(failure: FailureType | null) {
+  if (failure === 'network') return NETWORK_ERROR;
+  if (failure === 'rateLimited') return RATE_LIMIT_ERROR;
+  return SERVER_ERROR;
+}
+
 // Languages the backend may detect in a message (ISO 639-1 codes).
 export const languageNames: Record<string, string> = {
   en: 'English', rw: 'Kinyarwanda', fr: 'French', sw: 'Swahili', rn: 'Kirundi', lg: 'Luganda', ln: 'Lingala',

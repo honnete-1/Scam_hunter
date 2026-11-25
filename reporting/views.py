@@ -55,6 +55,8 @@ class CommunityReportListCreateView(generics.ListCreateAPIView):
     # You must be logged in to submit a report, and you only see your own reports.
     serializer_class = CommunityReportSerializer
     permission_classes = [IsAuthenticated]
+    # Limits how many reports one account can send (see SCAM_HUNTER_RATE_LIMITS).
+    throttle_scope = "report"
 
     def get_queryset(self):
         return CommunityReport.objects.filter(submitted_by=self.request.user)
@@ -189,6 +191,7 @@ class RemovalRequestListCreateView(generics.ListCreateAPIView):
     serializer_class = RemovalRequestSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    throttle_scope = "removal"
 
     def get_queryset(self):
         return RemovalRequest.objects.filter(submitted_by=self.request.user)

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { NETWORK_ERROR, SERVER_ERROR } from '../content/labels';
+import { failureLabel, toFailure } from '../content/labels';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { firstError } from '../services/api';
@@ -60,7 +60,7 @@ export default function AuthForm({ mode, onSuccess, onSwitchMode }: Props) {
     } else if (res.kind === 'auth') {
       setFormError("That username and password don't match. Please try again.");
     } else {
-      const failure = res.kind === 'network' ? NETWORK_ERROR : SERVER_ERROR;
+      const failure = failureLabel(toFailure(res.kind));
       setFormError(`${failure.title} ${failure.detail}`);
     }
   }
