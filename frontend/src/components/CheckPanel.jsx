@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { checkContent } from "../api";
+import { SLOW_SERVER_NOTICE, useSlowNotice } from "../useSlowNotice";
 import EvidenceCard from "./EvidenceCard";
 
 // Change the form based on what the user wants to check.
@@ -47,6 +48,7 @@ export default function CheckPanel({ initialType = "MESSAGE", titleTag: Title = 
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [checkedValue, setCheckedValue] = useState("");
+  const slow = useSlowNotice(loading);
 
   const id = useId();
   const inputRef = useRef(null);
@@ -198,7 +200,7 @@ export default function CheckPanel({ initialType = "MESSAGE", titleTag: Title = 
               )}
             </button>
             <p className="checker__status" aria-live="polite">
-              {loading ? "Reviewing the submitted content." : ""}
+              {loading ? (slow ? SLOW_SERVER_NOTICE : "Reviewing the submitted content.") : ""}
             </p>
           </div>
         </form>
