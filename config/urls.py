@@ -5,6 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 from .app_release import AndroidReleaseView
 from .frontend import website
+from .health import HealthView
 
 admin.site.site_header = "Scam Hunter moderation"
 admin.site.site_title = "Scam Hunter admin"
@@ -18,6 +19,7 @@ urlpatterns = [
     path("api/check/", include("checking.urls")),
     path("api/reports/", include("reporting.urls")),
     path("api/app/android/", AndroidReleaseView.as_view(), name="android-release"),
+    path("api/health/", HealthView.as_view(), name="health"),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]

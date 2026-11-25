@@ -96,6 +96,12 @@ export const checkMessage = (message: string) => checkContent('MESSAGE', message
 export const checkUrl = (url: string) => checkContent('URL', url);
 export const checkPhone = (phoneNumber: string) => checkContent('PHONE', phoneNumber);
 
+// The free server sleeps after 15 minutes without visitors. A quick call when the app opens wakes it up
+// while the user is still typing, so their first check doesn't have to wait for it.
+export async function wakeServer(): Promise<void> {
+  await request('/api/health/');
+}
+
 export function signUp(details: { username: string; email: string; password: string }) {
   return request<User>('/api/accounts/register/', { method: 'POST', body: details });
 }
