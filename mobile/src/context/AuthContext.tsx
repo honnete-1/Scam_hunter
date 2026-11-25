@@ -34,6 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(username: string, password: string) {
+    // Don't send an old token with the login request; the server would refuse it.
+    api.setAuthToken(null);
     const res = await api.login(username, password);
     if (res.ok) {
       api.setAuthToken(res.data.token);
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signUp(details: { username: string; email: string; password: string }) {
+    api.setAuthToken(null);
     const res = await api.signUp(details);
     if (!res.ok) return res;
     return login(details.username, details.password);

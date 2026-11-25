@@ -29,6 +29,20 @@ class AccountAPITests(APITestCase):
         response = self.client.post("/api/accounts/login/", {"username": "bob", "password": "wrong"}, format="json")
         self.assertEqual(response.status_code, 401)
 
+    def test_old_token_does_not_block_login_or_signup(self):
+        # The app may still hold a token the server no longer knows (e.g. from another server).
+        User.objects.create_user("dan", password="S4fe-enough-pass")
+        self.client.credentials(HTTP_AUTHORIZATION="Token 0000000000000000000000000000000000000000")
+
+        response = self.client.post("/api/accounts/login/", {"username": "dan", "password": "S4fe-enough-pass"}, format="json")
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post("/api/accounts/login/", {"username": "dan", "password": "wrong"}, format="json")
+        self.assertEqual(response.data["detail"], "Invalid username or password.")
+        response = self.client.post(
+            "/api/accounts/register/", {"username": "erin", "password": "S4fe-enough-pass"}, format="json"
+        )
+        self.assertEqual(response.status_code, 201)
+
     def test_weak_password_rejected(self):
         response = self.client.post("/api/accounts/register/", {"username": "carol", "password": "123"}, format="json")
         self.assertEqual(response.status_code, 400)

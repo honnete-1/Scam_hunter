@@ -20,6 +20,9 @@ from .serializers import LoginResponseSerializer, LoginSerializer, RegisterSeria
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
+    # Signing up needs no account, so an old or unknown token sent by the app is ignored
+    # instead of failing with "Invalid token".
+    authentication_classes = []
 
 
 @extend_schema(
@@ -32,6 +35,8 @@ class RegisterView(generics.CreateAPIView):
 )
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    # Logging in needs no account, so an old token (e.g. from another server) is ignored.
+    authentication_classes = []
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
