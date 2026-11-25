@@ -95,6 +95,10 @@ The current APK talks to your computer (`http://192.168.1.76:8000`). For an app 
    `SCAM_HUNTER_ANDROID_VERSION` to the version (e.g. `1.2.3`), then **Save Changes**. The website's
    download button and QR code now offer that APK.
 
+Expo's APK links do not last forever. For a permanent link, attach the APK to a GitHub release and use
+its direct download link instead, e.g.
+`https://github.com/honnete-1/Scam_hunter/releases/download/v1.3.0/ScamHunter-1.3.0.apk`.
+
 ## 6. Optional: the Expo Go QR code for developers
 
 The **For developers: Expo Go** card on the Mobile App page shows a QR code only when the website is

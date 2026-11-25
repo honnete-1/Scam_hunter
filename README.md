@@ -11,6 +11,17 @@ is definitely a scam. A check gives one of these concern levels:
 If the reference lookup fails, the result is `CHECK_UNAVAILABLE` instead (never "no warning signs").
 Invalid input gets `INVALID_INPUT` and no concern level.
 
+## Try it
+
+- **Website:** https://scam-hunter-y1c7.onrender.com
+  (free hosting: after 15 minutes without visitors the first page can take about a minute to load).
+- **Android app (APK):** [release v1.3.0](https://github.com/honnete-1/Scam_hunter/releases/tag/v1.3.0), or
+  [download the APK directly](https://github.com/honnete-1/Scam_hunter/releases/download/v1.3.0/ScamHunter-1.3.0.apk).
+  1. Open the link on an Android phone and download `ScamHunter-1.3.0.apk`.
+  2. Open the file and allow **Install unknown apps** when Android asks.
+  3. If Play Protect warns, tap **Install anyway** (it is a test build, not on the Play Store).
+  4. Create an account in the app or log in with an account from the website (both use the same server).
+
 ## Backend setup
 
 ```bash
